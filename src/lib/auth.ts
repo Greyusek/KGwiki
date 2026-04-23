@@ -1,17 +1,11 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { z } from "zod";
 
-import { prisma } from "@/lib/prisma";
-
-const credentialsSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8)
-});
+import { loginSchema } from "@/lib/validators/auth";
+import { verifyUserCredentials } from "@/services/auth-service";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login"
@@ -39,15 +33,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" }
       },
       authorize: async (credentials) => {
-        const parsed = credentialsSchema.safeParse(credentials);
+        const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) {
           return null;
         }
 
-        // Placeholder for Milestone 2: compare password hash and return real user.
-        const user = await prisma.user.findUnique({
-          where: { email: parsed.data.email }
-        });
+        const user = await verifyUserCredentials(parsed.data);
 
         if (!user) {
           return null;
@@ -63,3 +54,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     })
   ]
 });
+
+export function parseAuthError(error: unknown) {
+  if (error instanceof z.ZodError) {
+    return error.issues[0]?.message ?? "Invalid input.";
+  }
+
+  return "Authentication request failed.";
+}
