@@ -220,3 +220,26 @@ export async function addFeedbackMedia(feedbackId: string, params: { fileName: s
 
   return { ok: true as const, media };
 }
+
+export async function removeFeedbackMedia(feedbackId: string, mediaId: string, user: SessionUser) {
+  const media = await prisma.feedbackMedia.findUnique({
+    where: { id: mediaId },
+    include: {
+      feedbackEntry: {
+        select: { id: true, authorId: true }
+      }
+    }
+  });
+
+  if (!media || media.feedbackEntryId !== feedbackId) {
+    return { ok: false as const, status: 404, error: "Media not found." };
+  }
+
+  if (media.feedbackEntry.authorId !== user.id && !isAdmin(user)) {
+    return { ok: false as const, status: 403, error: "You cannot delete this media." };
+  }
+
+  await prisma.feedbackMedia.delete({ where: { id: media.id } });
+
+  return { ok: true as const };
+}

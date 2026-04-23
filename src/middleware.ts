@@ -9,7 +9,8 @@ export default auth((request) => {
   const { pathname } = request.nextUrl;
   const isAdminRoute = pathname.startsWith("/admin");
   const isProfileRoute = pathname.startsWith("/profile");
-  const isProtectedRoute = isAdminRoute || isProfileRoute;
+  const isPlansRoute = pathname.startsWith("/plans");
+  const isProtectedRoute = isAdminRoute || isProfileRoute || isPlansRoute;
   const isAuthenticated = Boolean(request.auth?.user);
   const role = request.auth?.user?.role;
 
@@ -27,5 +28,5 @@ export default auth((request) => {
 });
 
 export const config = {
-  matcher: ["/admin/:path*", "/profile/:path*"]
+  matcher: ["/admin/:path*", "/profile/:path*", "/plans/:path*"]
 };

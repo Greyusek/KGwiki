@@ -142,3 +142,26 @@ npm run build
 npm run lint
 ```
 
+
+---
+
+## MVP feature status (Milestones 5-8)
+
+Current MVP includes:
+- Activity authoring, editing, and adaptation/copy flow.
+- Comments, ratings, and feedback workflow.
+- Media upload endpoints for activity media and feedback media (MinIO-backed paths).
+- Plan management pages and API (`/plans`, `/plans/new`, `/plans/[id]`, `/plans/[id]/edit`).
+- Profile page with editable name/avatar/bio and personal activity/plan listings.
+- Admin dashboard with users/activities/plans/comments tables.
+
+### Demo credentials
+
+After seed runs:
+- `admin@kgwiki.local`
+- `alice@kgwiki.local`
+- `bob@kgwiki.local`
+- `carol@kgwiki.local`
+
+Password for all demo users:
+- `ChangeMe123!`
