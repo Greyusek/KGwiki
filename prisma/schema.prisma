@@ -12,18 +12,178 @@ enum Role {
   admin
 }
 
+enum ActivityMediaType {
+  image
+  video
+  document
+}
+
+enum PlanType {
+  day
+  week
+}
+
 model User {
+  id           String          @id @default(cuid())
+  name         String
+  email        String          @unique
+  passwordHash String
+  role         Role            @default(user)
+  avatar       String?
+  bio          String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  accounts     Account[]
+  sessions     Session[]
+
+  activities      Activity[]      @relation("ActivityAuthor")
+  comments        Comment[]
+  feedbackEntries FeedbackEntry[]
+  ratings         Rating[]
+  plans           Plan[]
+
+  @@index([role])
+}
+
+model Activity {
+  id              String          @id @default(cuid())
+  title           String
+  summary         String
+  ageGroup        String
+  durationMinutes Int
+  goal            String
+  objectives      String[]
+  description     String
+  steps           String[]
+  materialsNeeded String[]
+  category        String
+  tags            String[]
+  season          String?
+  holidayLinks    String[]
+  locationType    String
+  complexityLevel String
+  authorId        String
+  sourceActivityId String?
+  isPublic        Boolean         @default(false)
+  averageRating   Float           @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  author          User            @relation("ActivityAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  sourceActivity  Activity?       @relation("ActivityFork", fields: [sourceActivityId], references: [id], onDelete: SetNull)
+  derivedActivities Activity[]    @relation("ActivityFork")
+  media           ActivityMedia[]
+  comments        Comment[]
+  feedbackEntries FeedbackEntry[]
+  ratings         Rating[]
+  planItems       PlanItem[]
+
+  @@index([authorId])
+  @@index([isPublic, category])
+  @@index([sourceActivityId])
+}
+
+model ActivityMedia {
+  id         String           @id @default(cuid())
+  activityId String
+  type       ActivityMediaType
+  url        String
+  fileName   String
+  createdAt  DateTime         @default(now())
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId])
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  activityId String
+  authorId   String
+  content    String
+  createdAt  DateTime @default(now())
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  author   User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([activityId, createdAt])
+  @@index([authorId])
+}
+
+model FeedbackEntry {
+  id            String          @id @default(cuid())
+  activityId    String
+  authorId      String
+  summary       String
+  whatWorked    String
+  whatToImprove String
+  createdAt     DateTime        @default(now())
+
+  activity Activity       @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  author   User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  media    FeedbackMedia[]
+
+  @@index([activityId, createdAt])
+  @@index([authorId])
+}
+
+model FeedbackMedia {
+  id              String           @id @default(cuid())
+  feedbackEntryId String
+  type            ActivityMediaType
+  url             String
+  fileName        String
+  createdAt       DateTime         @default(now())
+
+  feedbackEntry FeedbackEntry @relation(fields: [feedbackEntryId], references: [id], onDelete: Cascade)
+
+  @@index([feedbackEntryId])
+}
+
+model Rating {
+  id         String @id @default(cuid())
+  activityId String
+  authorId   String
+  value      Int
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  author   User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([activityId, authorId])
+  @@index([authorId])
+}
+
+model Plan {
   id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
-  role          Role      @default(user)
-  accounts      Account[]
-  sessions      Session[]
+  authorId      String
+  type          PlanType
+  title         String
+  date          DateTime?
+  weekStartDate DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  author User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  items  PlanItem[]
+
+  @@index([authorId, type])
+  @@index([weekStartDate])
+  @@index([date])
+}
+
+model PlanItem {
+  id          String   @id @default(cuid())
+  planId      String
+  activityId  String
+  orderIndex  Int
+  plannedTime DateTime?
+  notes       String?
+
+  plan     Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, orderIndex])
+  @@index([activityId])
 }
 
 model Account {
@@ -43,6 +203,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -52,6 +213,8 @@ model Session {
   expires      DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
