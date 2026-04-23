@@ -9,7 +9,7 @@ export default async function AdminPage() {
     redirect("/login?callbackUrl=/admin");
   }
 
-  if (session.user.role !== "admin") {
+  if (session?.user?.role !== "admin") {
     redirect("/profile");
   }
 

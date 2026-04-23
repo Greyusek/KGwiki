@@ -11,7 +11,7 @@ const publicRoutes = [
 
 export async function TopNav() {
   const session = await auth();
-  const isAdmin = session?.user.role === "admin";
+  const isAdmin = session?.user?.role === "admin";
 
   return (
     <header className="border-b bg-background/90 backdrop-blur">

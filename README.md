@@ -1,133 +1,144 @@
-# KGwiki - Milestone 1 Foundation
+# KGwiki Foundation (Stabilized Local Docker Setup)
 
-This repository contains the Milestone 1 baseline for a full-stack **Next.js + Prisma + PostgreSQL** project, ready for feature work in Milestone 2.
+This repository contains the Milestone 1 / early Milestone 2 KGwiki foundation using Next.js, Prisma, PostgreSQL, NextAuth/Auth.js, MinIO, Docker Compose, and Nginx.
 
-## Tech stack
+The repository is now set up so a fresh clone can be started locally with:
 
-- Next.js (App Router) + TypeScript
-- Tailwind CSS
-- shadcn/ui base setup
-- Prisma ORM + PostgreSQL
-- NextAuth scaffold (credentials provider placeholder)
-- Docker + Docker Compose
-- Nginx reverse proxy
-- MinIO for local file storage
+1. `cp .env.example .env`
+2. `docker compose up --build`
+3. Open `http://localhost:3000`
 
-## Project structure
+---
 
-```text
-src/
-  app/
-    api/auth/[...nextauth]/route.ts
-    activities/page.tsx
-    admin/page.tsx
-    login/page.tsx
-    plans/page.tsx
-    profile/page.tsx
-    register/page.tsx
-    layout.tsx
-    page.tsx
-  components/
-    layout/top-nav.tsx
-    ui/button.tsx
-  lib/
-    auth.ts
-    prisma.ts
-    utils.ts
-  types/
-    next-auth.d.ts
-prisma/
-  schema.prisma
-  seed.ts
-Dockerfile
-docker-compose.yml
-.env.example
-```
+## Prerequisites
 
-## 1) Local development setup
+- Docker Desktop (or Docker Engine + Compose plugin)
+- Git
 
-### Prerequisites
+> You do **not** need host-side Node.js/Prisma to run the app in Docker.
 
-- Node.js 22+
-- npm 10+
-- Docker + Docker Compose (recommended for services)
+---
 
-### Install dependencies
+## Local startup (fresh clone)
 
 ```bash
-npm install
-```
-
-### Configure environment
-
-```bash
+git clone <your-repo-url>
+cd KGwiki
 cp .env.example .env
+docker compose up --build
 ```
 
-Update values as needed (especially `NEXTAUTH_SECRET`).
+Open:
+- App: `http://localhost:3000`
+- Nginx proxy: `http://localhost`
+- MinIO API: `http://localhost:9000`
+- MinIO Console: `http://localhost:9001`
 
-### Start local app
+---
 
-```bash
-npm run dev
-```
+## What Docker does automatically
 
-App will run at: `http://localhost:3000`
+During image build:
+- installs dependencies
+- runs `prisma generate`
+- runs `next build`
 
-## 2) Run with Docker Compose
+At container startup:
+- runs `prisma migrate deploy`
+- runs idempotent seed (`npm run db:seed`)
+- starts Next.js (`npm run start`)
 
-Bring up Nginx, app, PostgreSQL, and MinIO:
+This removes the need for manual host-side Prisma generation/migration for normal local Docker startup.
+
+---
+
+## Environment configuration
+
+Create `.env` from `.env.example` and update values as needed.
+
+Key variables:
+- `DATABASE_URL` (Docker-internal Postgres URL)
+- `NEXTAUTH_SECRET` / `AUTH_SECRET`
+- `NEXTAUTH_URL` / `AUTH_URL` (set to `http://localhost:3000`)
+- `AUTH_TRUST_HOST=true` / `NEXTAUTH_TRUST_HOST=true` for local Docker host trust
+- MinIO variables (`MINIO_*`)
+
+---
+
+## Rebuild / restart / stop
+
+Rebuild images and restart:
 
 ```bash
 docker compose up --build
 ```
 
-Services:
-- Nginx (entrypoint): `http://localhost`
-- Next.js app (internal): `app:3000`
-- PostgreSQL: `localhost:5432`
-- MinIO API: `http://localhost:9000`
-- MinIO Console: `http://localhost:9001`
-
-## 3) Prisma workflow
-
-Generate Prisma client:
+Restart without rebuild:
 
 ```bash
-npm run prisma:generate
+docker compose up
 ```
 
-Create and apply migration:
+Stop containers:
 
 ```bash
-npm run prisma:migrate -- --name init
+docker compose down
 ```
 
-Open Prisma Studio:
+Stop and remove volumes (resets DB/MinIO data):
 
 ```bash
-npm run prisma:studio
+docker compose down -v
 ```
 
-## 4) Seed demo data (later milestone)
+---
 
-A seed scaffold exists in `prisma/seed.ts`.
+## Troubleshooting
 
-Run seed command:
+### Prisma issues
+
+If schema/migrations changed and app fails at startup:
 
 ```bash
-npm run db:seed
+docker compose down -v
+docker compose up --build
 ```
 
-> Currently this prints a placeholder message. Demo records should be added in a future milestone.
+This resets local database volume and reapplies migrations + seed.
 
-## 5) Authentication foundation
+### Auth.js `UntrustedHost` errors
 
-Authentication is intentionally scaffolded but not finalized:
+Ensure these are set in `.env`:
 
-- NextAuth route and auth handlers are wired.
-- Credentials provider is present as a placeholder.
-- Session/JWT role wiring is in place.
-- Prisma schema includes `Role` enum (`user`, `admin`) and auth tables.
+- `AUTH_TRUST_HOST=true`
+- `NEXTAUTH_TRUST_HOST=true`
+- `NEXTAUTH_URL=http://localhost:3000`
+- `AUTH_URL=http://localhost:3000`
 
-Milestone 2 should implement full registration/login validation, password hashing and checks, and route-level UX behavior.
+Then rebuild:
+
+```bash
+docker compose up --build
+```
+
+### Build failures around Prisma client
+
+The Dockerfile explicitly runs `prisma generate` before build. If lockfiles/dependencies changed unexpectedly, rebuild from scratch:
+
+```bash
+docker compose build --no-cache app
+docker compose up
+```
+
+---
+
+## Optional host-side checks (non-Docker workflow)
+
+If you want to run checks locally on host:
+
+```bash
+npm install
+npm run build
+npm run lint
+```
+
