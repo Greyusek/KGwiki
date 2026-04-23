@@ -1,152 +1,158 @@
-# KGWiki Remaining Backlog (Milestones 5–8)
+# TASKS.md
 
-## Current State
+# Autonomous Execution Plan for Codex
 
-Completed:
+## Operating Mode
 
-* [x] Milestone 1–4 completed
-* [x] Auth foundation running
-* [x] Roles simplified to:
+Execute autonomously and sequentially.
 
-  * user
-  * admin
+Work strictly milestone-by-milestone.
 
-Permissions rules:
+Never work on multiple milestones simultaneously.
 
-* User can edit only:
+Do not skip verification.
 
-  * own activities
-  * copied/adapted activities owned by user
-  * own plans
+Commit after every completed milestone.
 
-* Admin can edit everything.
+If blocked:
 
-Critical constraints:
-
-* Do not introduce new roles.
-* Do not break existing authentication.
-* Do not refactor unrelated code.
-* Preserve existing schema unless required for milestone delivery.
+* choose the smallest maintainable implementation
+* document compromise
+* continue
 
 ---
 
-# PRE-CHECK (Run before Milestone 5)
+# Global Constraints (Do Not Break)
 
-Audit codebase for:
+Preserve:
+
+* existing auth flow
+* existing user/admin role model
+* existing migrations unless required
+* existing Docker setup
+* current working routes
+
+Do NOT:
+
+* add new roles
+* introduce major new features
+* refactor unrelated modules
+* replace existing stack choices
+* redesign architecture without necessity
+
+This is MVP completion, not platform redesign.
+
+---
+
+# Mandatory Cycle For Every Milestone
+
+For each milestone:
+
+1. implement only current milestone scope
+
+2. run:
+
+```bash id="zhdj0p"
+npm run lint
+npm run build
+```
+
+If relevant:
+
+```bash id="wgd1f8"
+docker compose up -d
+```
+
+3. fix errors
+
+4. summarize:
+
+* implemented work
+* changed files
+* shortcuts taken
+* improvements for later
+* build status
+
+5. commit changes
+
+6. proceed to next milestone
+
+Never continue with failing build.
+
+---
+
+# Phase 0 — Stability Audit
+
+Audit and fix:
 
 * broken routes
 * missing imports
 * TypeScript errors
-* Prisma schema inconsistencies
-* auth/authorization mistakes
-* invalid ownership checks
-* missing environment variables
+* Prisma inconsistencies
+* authorization bugs
+* ownership checks
+* env issues
 * Docker issues
 
-Fix all discovered issues.
+Goal:
+Reach stable baseline before feature work.
 
-Output after audit:
+Exit condition:
+Project builds successfully.
 
-1. summarize issues found
-2. list fixes applied
-3. confirm project builds successfully
-
-Verification:
-
-```bash
-npm run lint
-npm run build
-docker compose up -d
-```
+Commit.
 
 ---
 
-# Milestone 5 — Media Uploads
+# Phase 1 — Milestone 5 Media Uploads
 
-Goal:
-Implement practical media/file uploads.
+Implement:
 
-Deliver:
+* activity uploads
+* feedback uploads
+* MinIO integration
+* metadata persistence
+* file deletion permissions
+* upload validation
+* simple upload UI
+* image preview if practical
 
-* Activity media uploads:
+Priorities:
 
-  * images
-  * audio
-  * video
-  * documents
+1 stability
+2 correctness
+3 maintainability
+4 UX polish
 
-* Feedback media uploads
+Avoid overengineering media pipeline.
 
-* Storage integration:
+Exit condition:
 
-  * MinIO backend integration
-  * metadata stored in database
-
-* File management:
-
-  * display uploads
-  * delete by owner or admin
-
-* Validation:
-
-  * file types
-  * file size
-  * readable errors
-
-* UX:
-
-  * upload UI
-  * preview images
-  * download links for other files
-
-Verification:
-
-* upload works
+* upload flow works
 * files persist
-* ownership respected
+* ownership rules work
 
-Commands:
-
-```bash
-npm run lint
-npm run build
-```
-
-Done when:
-
-* Upload flow works
-* Files linked to activities and feedback
-
-Commit after completion.
+Commit.
 
 ---
 
-# Milestone 6 — Plans
+# Phase 2 — Milestone 6 Planning
 
-Goal:
-Implement planning module.
+Implement:
 
-Deliver:
-
-Plan CRUD:
-
-* create
-* edit own
-* delete own
-* list own
-* view own
+Plan CRUD
 
 Plan types:
 
-* day plan
-* week plan
+* day
+* week
 
 Plan items:
 
-* add activities
-* manual ordering
-* optional time
-* notes
+* add owned activities
+* ordering controls
+* optional notes
+* optional planned time
 
 Pages:
 
@@ -157,39 +163,29 @@ Pages:
 
 Permissions:
 
-* own plans only for users
-* admin manages all
+* users own only
+* admin all
 
-Verification:
+Drag-drop optional.
+Use manual ordering if simpler.
 
-* ownership works
-* day and week plans render
-* activity linking works
+Exit condition:
+Plan workflow fully usable.
 
-Commands:
-
-```bash
-npm run lint
-npm run build
-```
-
-Commit after completion.
+Commit.
 
 ---
 
-# Milestone 7 — Profiles and Admin
+# Phase 3 — Milestone 7 Profiles + Admin
 
-Goal:
-Complete user/admin workflow.
-
-Deliver:
+Implement:
 
 User profile:
 
 * profile page
-* user activities
-* copied activities
-* user plans
+* activities
+* adapted activities
+* plans
 
 Profile editing:
 
@@ -197,132 +193,95 @@ Profile editing:
 * avatar
 * bio
 
-Admin dashboard:
-Sections:
+Admin:
 
 * users
 * activities
 * plans
 * comments
 
-Admin capabilities:
+Simple practical admin UI.
+Tables are acceptable.
 
-* view/edit all activities
-* view/edit all plans
-* delete inappropriate comments
+Also improve:
 
-Also:
+* demo seed data
+* README
 
-* improve seed demo data
-* update README:
+Exit condition:
+Full user/admin workflow complete.
 
-  * setup
-  * env vars
-  * seed process
-  * roles
-  * uploads
-
-Verification:
-
-* user profiles work
-* admin routes protected
-* admin management works
-
-Commit after completion.
+Commit.
 
 ---
 
-# Milestone 8 — Polish and Stabilization
+# Phase 4 — Milestone 8 Stabilization
 
-Goal:
-Prepare MVP for pilot testing.
+Focus only on:
 
-Deliver:
+* consistency
+* weak points
+* technical debt
+* pilot readiness
 
-Review:
+Improve:
 
 * routing
 * permissions
 * validation
-* empty states
-* loading states
-* error states
-
-Improve UX:
-
-* labels
-* forms
-* helper text
-
-Improve browsing:
-
+* loading/empty/error states
 * filters
-* readability
 * mobile responsiveness
 
-Demo readiness:
+Fix:
 
-* realistic seed data
-* verify Docker compose
-* verify migrations
-* verify upload flow
+* duplication
+* weak types
+* reuse problems
 
-Reduce technical debt:
+Do NOT add features.
 
-* remove duplication
-* improve reuse
-* clean types
+Exit condition:
+Pilot-ready MVP.
 
-Do NOT:
-
-* add major new features
-* expand scope
-
-Verification:
-
-```bash
-npm run lint
-npm run build
-docker compose up -d
-```
-
-Done when:
-
-* MVP stable
-* local deployment ready
-* pilot testing ready
-
-Commit after completion.
+Commit.
 
 ---
 
-# Mandatory Output After EACH Milestone
+# Agent Guardrails
 
-Before moving to next milestone, provide:
+If uncertain:
 
-1. summary of what was implemented
-2. list of created/modified files
-3. shortcuts or temporary decisions made
-4. things to improve later
-5. confirm project builds successfully
+Prefer:
 
-Then proceed to next milestone.
+* simpler implementation
+* maintainable implementation
+* smaller change set
+
+Avoid:
+
+* speculative improvements
+* scope expansion
+* touching unrelated files
+
+If a requirement risks breaking existing system:
+
+* preserve working system
+* choose minimal acceptable implementation
+* document limitation
 
 ---
 
 # Execution Order
 
-Run strictly sequentially:
+Run only:
 
-Pre-check
-→ Milestone 5
-→ Milestone 6
-→ Milestone 7
-→ Milestone 8
+Phase 0
+→ Phase 1
+→ Phase 2
+→ Phase 3
+→ Phase 4
 
-After each milestone:
+No reordering.
 
-* run checks
-* fix errors
-* commit changes
-* continue
+Stop only when all phases completed.
