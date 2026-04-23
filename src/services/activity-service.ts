@@ -41,7 +41,7 @@ export async function listUserActivities(userId: string) {
   });
 }
 
-export async function getActivityById(activityId: string) {
+export async function getActivityById(activityId: string, userId?: string) {
   return prisma.activity.findUnique({
     where: { id: activityId },
     include: {
@@ -54,7 +54,26 @@ export async function getActivityById(activityId: string) {
           title: true,
           author: { select: { name: true } }
         }
-      }
+      },
+      comments: {
+        include: {
+          author: { select: { id: true, name: true, role: true } }
+        },
+        orderBy: { createdAt: "asc" }
+      },
+      feedbackEntries: {
+        include: {
+          author: { select: { id: true, name: true, role: true } },
+          media: true
+        },
+        orderBy: { createdAt: "desc" }
+      },
+      ratings: userId
+        ? {
+            where: { authorId: userId },
+            select: { value: true }
+          }
+        : false
     }
   });
 }
