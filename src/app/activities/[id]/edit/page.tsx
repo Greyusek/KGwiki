@@ -1,8 +1,11 @@
+
 import { notFound, redirect } from "next/navigation";
 
 import { ActivityForm } from "@/components/activities/activity-form";
 import { auth } from "@/lib/auth";
 import { canManageActivity, getActivityById } from "@/services/activity-service";
+
+export const dynamic = "force-dynamic";
 
 function listToLines(items: string[]) {
   return items.join("\n");

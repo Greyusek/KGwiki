@@ -1,5 +1,8 @@
+
 import { ActivityCard } from "@/components/activities/activity-card";
 import { listPublicActivities } from "@/services/activity-service";
+
+export const dynamic = "force-dynamic";
 
 export default async function ActivitiesPage() {
   const activities = await listPublicActivities();

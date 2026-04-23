@@ -1,3 +1,4 @@
+
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -6,6 +7,8 @@ import { DeleteActivityButton } from "@/components/activities/delete-activity-bu
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 import { canManageActivity, getActivityById } from "@/services/activity-service";
+
+export const dynamic = "force-dynamic";
 
 function renderList(items: string[]) {
   if (!items.length) {
