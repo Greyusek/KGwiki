@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 
 import { DeleteActivityButton } from "@/components/activities/delete-activity-button";
 import { Button } from "@/components/ui/button";
+import { ActivitySocialPanel } from "@/components/activities/activity-social-panel";
 import { auth } from "@/lib/auth";
 import { canManageActivity, getActivityById } from "@/services/activity-service";
 
@@ -29,7 +30,7 @@ export default async function ActivityDetailsPage({ params }: { params: Promise<
   const sessionUser = session?.user?.id && session.user.role ? { id: session.user.id, role: session.user.role } : undefined;
 
   const { id } = await params;
-  const activity = await getActivityById(id);
+  const activity = await getActivityById(id, sessionUser?.id);
 
   if (!activity) {
     notFound();
@@ -42,6 +43,9 @@ export default async function ActivityDetailsPage({ params }: { params: Promise<
   }
 
   const canEdit = Boolean(sessionUser && canManageActivity(sessionUser, activity));
+
+  const currentUserRating = activity.ratings?.[0]?.value;
+  const canCopy = Boolean(sessionUser && (activity.isPublic || sessionUser.role === "admin") && activity.authorId !== sessionUser.id);
 
   return (
     <section className="space-y-6">
@@ -91,6 +95,32 @@ export default async function ActivityDetailsPage({ params }: { params: Promise<
       <Section title="Materials needed">{renderList(activity.materialsNeeded)}</Section>
       <Section title="Tags">{renderList(activity.tags)}</Section>
       <Section title="Holiday links">{renderList(activity.holidayLinks)}</Section>
+
+      <ActivitySocialPanel
+        activity={{
+          id: activity.id,
+          authorId: activity.authorId,
+          averageRating: activity.averageRating,
+          comments: activity.comments.map((entry) => ({
+            id: entry.id,
+            content: entry.content,
+            createdAt: entry.createdAt.toISOString(),
+            author: entry.author
+          })),
+          feedbackEntries: activity.feedbackEntries.map((entry) => ({
+            id: entry.id,
+            summary: entry.summary,
+            whatWorked: entry.whatWorked,
+            whatToImprove: entry.whatToImprove,
+            createdAt: entry.createdAt.toISOString(),
+            author: entry.author,
+            media: entry.media.map((media) => ({ id: media.id, fileName: media.fileName, url: media.url }))
+          })),
+          currentUserRating
+        }}
+        currentUser={sessionUser}
+        canCopy={canCopy}
+      />
     </section>
   );
 }
