@@ -10,6 +10,7 @@ This repository contains the Milestone 1 baseline for a full-stack **Next.js + P
 - Prisma ORM + PostgreSQL
 - NextAuth scaffold (credentials provider placeholder)
 - Docker + Docker Compose
+- Nginx reverse proxy
 - MinIO for local file storage
 
 ## Project structure
@@ -75,14 +76,15 @@ App will run at: `http://localhost:3000`
 
 ## 2) Run with Docker Compose
 
-Bring up app, PostgreSQL, and MinIO:
+Bring up Nginx, app, PostgreSQL, and MinIO:
 
 ```bash
 docker compose up --build
 ```
 
 Services:
-- App: `http://localhost:3000`
+- Nginx (entrypoint): `http://localhost`
+- Next.js app (internal): `app:3000`
 - PostgreSQL: `localhost:5432`
 - MinIO API: `http://localhost:9000`
 - MinIO Console: `http://localhost:9001`

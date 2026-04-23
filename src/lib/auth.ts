@@ -2,29 +2,12 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 
+import { authConfig } from "@/lib/auth.config";
 import { loginSchema } from "@/lib/validators/auth";
 import { verifyUserCredentials } from "@/services/auth-service";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt" },
-  pages: {
-    signIn: "/login"
-  },
-  callbacks: {
-    jwt: async ({ token, user }) => {
-      if (user) {
-        token.role = user.role;
-      }
-      return token;
-    },
-    session: async ({ session, token }) => {
-      if (session.user) {
-        session.user.id = token.sub ?? "";
-        session.user.role = (token.role as "user" | "admin" | undefined) ?? "user";
-      }
-      return session;
-    }
-  },
+  ...authConfig,
   providers: [
     Credentials({
       name: "credentials",

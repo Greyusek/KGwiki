@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -5,6 +6,8 @@ import { ActivityCard } from "@/components/activities/activity-card";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 import { listUserActivities } from "@/services/activity-service";
+
+export const dynamic = "force-dynamic";
 
 export default async function MyActivitiesPage() {
   const session = await auth();
