@@ -31,6 +31,11 @@ export async function TopNav() {
           {session?.user ? (
             <>
               <li>
+                <Link href="/activities/mine" className="transition-colors hover:text-foreground">
+                  My Activities
+                </Link>
+              </li>
+              <li>
                 <Link href="/profile" className="transition-colors hover:text-foreground">
                   Profile
                 </Link>
