@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { Role } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { LoginInput, RegisterInput } from "@/lib/validators/auth";
@@ -21,7 +22,7 @@ export async function registerUser(input: RegisterInput) {
       name: input.name,
       email: input.email,
       passwordHash,
-      role: "user"
+      role: Role.user
     },
     select: {
       id: true,

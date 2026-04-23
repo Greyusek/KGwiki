@@ -20,7 +20,7 @@ export default async function ProfilePage() {
           <span className="font-medium">Email:</span> {session.user.email}
         </p>
         <p>
-          <span className="font-medium">Role:</span> {session.user.role}
+          <span className="font-medium">Role:</span> {session?.user?.role ?? "user"}
         </p>
       </div>
     </section>

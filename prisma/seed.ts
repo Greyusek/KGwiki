@@ -5,10 +5,10 @@ const prisma = new PrismaClient();
 const DEFAULT_PASSWORD = "ChangeMe123!";
 
 const demoUsers: Array<{ name: string; email: string; role: Role }> = [
-  { name: "Admin User", email: "admin@kgwiki.local", role: "admin" },
-  { name: "Alice Teacher", email: "alice@kgwiki.local", role: "user" },
-  { name: "Bob Educator", email: "bob@kgwiki.local", role: "user" },
-  { name: "Carol Parent", email: "carol@kgwiki.local", role: "user" }
+  { name: "Admin User", email: "admin@kgwiki.local", role: Role.admin },
+  { name: "Alice Teacher", email: "alice@kgwiki.local", role: Role.user },
+  { name: "Bob Educator", email: "bob@kgwiki.local", role: Role.user },
+  { name: "Carol Parent", email: "carol@kgwiki.local", role: Role.user }
 ];
 
 async function main() {
