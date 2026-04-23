@@ -101,6 +101,7 @@ export default async function ActivityDetailsPage({ params }: { params: Promise<
           id: activity.id,
           authorId: activity.authorId,
           averageRating: activity.averageRating,
+          media: activity.media.map((media) => ({ id: media.id, fileName: media.fileName, url: media.url, type: media.type })),
           comments: activity.comments.map((entry) => ({
             id: entry.id,
             content: entry.content,
@@ -114,7 +115,7 @@ export default async function ActivityDetailsPage({ params }: { params: Promise<
             whatToImprove: entry.whatToImprove,
             createdAt: entry.createdAt.toISOString(),
             author: entry.author,
-            media: entry.media.map((media) => ({ id: media.id, fileName: media.fileName, url: media.url }))
+            media: entry.media.map((media) => ({ id: media.id, fileName: media.fileName, url: media.url, type: media.type }))
           })),
           currentUserRating
         }}
