@@ -15,10 +15,10 @@ export default async function AdminPage() {
   }
 
   const [users, activities, plans, comments] = await Promise.all([
-    prisma.user.findMany({ select: { id: true, name: true, email: true, role: true }, orderBy: { createdAt: "desc" }, take: 20 }),
-    prisma.activity.findMany({ select: { id: true, title: true, author: { select: { name: true } }, isPublic: true }, orderBy: { updatedAt: "desc" }, take: 20 }),
-    prisma.plan.findMany({ select: { id: true, title: true, type: true, author: { select: { name: true } } }, orderBy: { updatedAt: "desc" }, take: 20 }),
-    prisma.comment.findMany({ select: { id: true, content: true, author: { select: { name: true } }, activity: { select: { title: true } } }, orderBy: { createdAt: "desc" }, take: 20 })
+    prisma.user.findMany({ select: { id: true, name: true, email: true, role: true }, orderBy: { createdAt: "desc" }, take: 50 }),
+    prisma.activity.findMany({ select: { id: true, title: true, author: { select: { name: true } }, isPublic: true, category: true, ageGroup: true }, orderBy: { updatedAt: "desc" }, take: 50 }),
+    prisma.plan.findMany({ select: { id: true, title: true, type: true, author: { select: { name: true } } }, orderBy: { updatedAt: "desc" }, take: 50 }),
+    prisma.comment.findMany({ select: { id: true, content: true, author: { select: { name: true } }, activity: { select: { title: true } } }, orderBy: { createdAt: "desc" }, take: 50 })
   ]);
 
   return (
@@ -26,7 +26,7 @@ export default async function AdminPage() {
       <h1 className="text-2xl font-semibold">Admin</h1>
 
       <AdminTable title="Users" headers={["Name", "Email", "Role"]} rows={users.map((user) => [user.name, user.email, user.role])} />
-      <AdminTable title="Activities" headers={["Title", "Author", "Public"]} rows={activities.map((activity) => [activity.title, activity.author.name, activity.isPublic ? "Yes" : "No"])} />
+      <AdminTable title="Activities" headers={["Title", "Author", "Public", "Category", "Age Group"]} rows={activities.map((activity) => [activity.title, activity.author.name, activity.isPublic ? "Yes" : "No", activity.category, activity.ageGroup])} />
       <AdminTable title="Plans" headers={["Title", "Type", "Owner"]} rows={plans.map((plan) => [plan.title, plan.type, plan.author.name])} />
       <AdminTable title="Comments" headers={["Comment", "Author", "Activity"]} rows={comments.map((comment) => [comment.content, comment.author.name, comment.activity.title])} />
     </section>

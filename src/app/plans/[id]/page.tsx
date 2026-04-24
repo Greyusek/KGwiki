@@ -21,7 +21,7 @@ export default async function PlanDetailsPage({ params }: { params: Promise<{ id
       <div className="flex items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold">{plan.title}</h1>
-          <p className="text-sm text-muted-foreground">{plan.type} plan</p>
+          <p className="text-sm text-muted-foreground">{plan.type} plan · author: {plan.author.name}</p>
         </div>
         <Button asChild variant="outline">
           <Link href={`/plans/${plan.id}/edit`}>Edit</Link>
@@ -33,7 +33,7 @@ export default async function PlanDetailsPage({ params }: { params: Promise<{ id
         {plan.items.map((item) => (
           <li key={item.id} className="rounded-md border p-3 text-sm">
             <p className="font-medium">
-              {item.orderIndex + 1}. {item.activity.title}
+              {item.orderIndex + 1}. <Link href={`/activities/${item.activity.id}`} className="text-blue-600 hover:underline">{item.activity.title}</Link>
             </p>
             {item.plannedTime ? <p>Planned: {item.plannedTime.toLocaleString()}</p> : null}
             {item.notes ? <p>Notes: {item.notes}</p> : null}

@@ -2,6 +2,8 @@ import { ActivityMediaType } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { minioObjectUrl } from "@/lib/minio";
+import { minioObjectPathFromUrl } from "@/lib/media";
+import { getMinioClient, minioBucket } from "@/lib/minio";
 import { CommentInput, FeedbackInput, RatingInput } from "@/lib/validators/social";
 
 type SessionUser = {
@@ -85,6 +87,20 @@ export async function deleteComment(commentId: string, user: SessionUser) {
 
   await prisma.comment.delete({ where: { id: commentId } });
   return { ok: true as const };
+}
+
+export async function updateComment(commentId: string, content: string, user: SessionUser) {
+  const comment = await prisma.comment.findUnique({ where: { id: commentId }, select: { id: true, authorId: true } });
+  if (!comment) {
+    return { ok: false as const, status: 404, error: "Comment not found." };
+  }
+
+  if (comment.authorId !== user.id && !isAdmin(user)) {
+    return { ok: false as const, status: 403, error: "You cannot edit this comment." };
+  }
+
+  const updated = await prisma.comment.update({ where: { id: commentId }, data: { content } });
+  return { ok: true as const, comment: updated };
 }
 
 async function recomputeAverage(activityId: string) {
@@ -237,6 +253,11 @@ export async function removeFeedbackMedia(feedbackId: string, mediaId: string, u
 
   if (media.feedbackEntry.authorId !== user.id && !isAdmin(user)) {
     return { ok: false as const, status: 403, error: "You cannot delete this media." };
+  }
+
+  const objectPath = minioObjectPathFromUrl(media.url);
+  if (objectPath) {
+    await getMinioClient().removeObject(minioBucket, objectPath).catch(() => null);
   }
 
   await prisma.feedbackMedia.delete({ where: { id: media.id } });

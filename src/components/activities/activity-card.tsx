@@ -12,6 +12,7 @@ type ActivityCardProps = {
     isPublic: boolean;
     author: {
       name: string;
+      avatar?: string | null;
     };
     updatedAt: Date;
   };
@@ -49,9 +50,19 @@ export function ActivityCard({ activity }: ActivityCardProps) {
           <dd>{activity.complexityLevel}</dd>
         </div>
       </dl>
-      <p className="text-xs text-muted-foreground">
-        By {activity.author.name} · Updated {activity.updatedAt.toLocaleDateString()}
-      </p>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        {activity.author.avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={activity.author.avatar} alt={activity.author.name} className="h-6 w-6 rounded-full object-cover" />
+        ) : (
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border text-[10px]">
+            {activity.author.name.slice(0, 1).toUpperCase()}
+          </span>
+        )}
+        <span>
+          By {activity.author.name} · Updated {activity.updatedAt.toLocaleDateString()}
+        </span>
+      </div>
     </article>
   );
 }
