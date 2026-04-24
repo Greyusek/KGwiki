@@ -40,6 +40,8 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [comment, setComment] = useState("");
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingCommentContent, setEditingCommentContent] = useState("");
   const [rating, setRating] = useState(activity.currentUserRating?.toString() ?? "");
   const [feedback, setFeedback] = useState({ summary: "", whatWorked: "", whatToImprove: "" });
 
@@ -183,28 +185,58 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
         <h2 className="text-lg font-semibold">Comments</h2>
         <div className="space-y-2">
           {activity.comments.map((entry) => {
-            const canDelete = currentUser && (currentUser.id === entry.author.id || currentUser.role === "admin");
+            const canManage = currentUser && (currentUser.id === entry.author.id || currentUser.role === "admin");
             return (
               <article key={entry.id} className="rounded-md border p-3 text-sm">
-                <p>{entry.content}</p>
+                {editingCommentId === entry.id ? (
+                  <form
+                    className="space-y-2"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      runAction(`comment-edit-${entry.id}`, async () => {
+                        await submitJson(`/api/comments/${entry.id}`, "PATCH", { content: editingCommentContent });
+                        setEditingCommentId(null);
+                        setEditingCommentContent("");
+                      });
+                    }}
+                  >
+                    <textarea className="min-h-20 w-full rounded-md border px-3 py-2 text-sm" value={editingCommentContent} onChange={(event) => setEditingCommentContent(event.target.value)} required />
+                    <div className="flex gap-2">
+                      <Button size="sm" type="submit">Save</Button>
+                      <Button size="sm" variant="outline" type="button" onClick={() => setEditingCommentId(null)}>Cancel</Button>
+                    </div>
+                  </form>
+                ) : (
+                  <p>{entry.content}</p>
+                )}
                 <p className="mt-2 text-xs text-muted-foreground">
                   {entry.author.name} · {new Date(entry.createdAt).toLocaleString()}
                 </p>
-                {canDelete ? (
-                  <button
-                    className="mt-1 text-xs text-red-600 hover:underline"
-                    onClick={() =>
-                      runAction(`comment-delete-${entry.id}`, async () => {
-                        const response = await fetch(`/api/comments/${entry.id}`, { method: "DELETE" });
-                        const data = (await response.json()) as { error?: string };
-                        if (!response.ok) {
-                          throw new Error(data.error ?? "Delete failed.");
-                        }
-                      })
-                    }
-                  >
-                    Delete
-                  </button>
+                {canManage ? (
+                  <div className="mt-1 flex gap-2">
+                    {editingCommentId !== entry.id ? (
+                      <button className="text-xs text-blue-600 hover:underline" onClick={() => {
+                        setEditingCommentId(entry.id);
+                        setEditingCommentContent(entry.content);
+                      }}>
+                        Edit
+                      </button>
+                    ) : null}
+                    <button
+                      className="text-xs text-red-600 hover:underline"
+                      onClick={() =>
+                        runAction(`comment-delete-${entry.id}`, async () => {
+                          const response = await fetch(`/api/comments/${entry.id}`, { method: "DELETE" });
+                          const data = (await response.json()) as { error?: string };
+                          if (!response.ok) {
+                            throw new Error(data.error ?? "Delete failed.");
+                          }
+                        })
+                      }
+                    >
+                      Delete
+                    </button>
+                  </div>
                 ) : null}
               </article>
             );

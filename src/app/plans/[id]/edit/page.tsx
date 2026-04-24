@@ -24,7 +24,10 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
   if (!plan) notFound();
 
   const activities = await prisma.activity.findMany({
-    where: session.user.role === "admin" ? {} : { authorId: session.user.id },
+    where:
+      session.user.role === "admin"
+        ? {}
+        : { OR: [{ authorId: session.user.id }, { isPublic: true }] },
     select: { id: true, title: true },
     orderBy: { title: "asc" }
   });

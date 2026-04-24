@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -17,11 +18,13 @@ export default async function ProfilePage() {
     include: {
       activities: {
         select: { id: true, title: true, sourceActivityId: true },
-        orderBy: { updatedAt: "desc" }
+        orderBy: { updatedAt: "desc" },
+        take: 20
       },
       plans: {
         select: { id: true, title: true, type: true, updatedAt: true },
-        orderBy: { updatedAt: "desc" }
+        orderBy: { updatedAt: "desc" },
+        take: 20
       }
     }
   });
@@ -37,6 +40,10 @@ export default async function ProfilePage() {
     <section className="space-y-4">
       <h1 className="text-2xl font-semibold">Profile</h1>
       <div className="rounded-lg border bg-background p-4 text-sm">
+        {user.avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={user.avatar} alt={user.name} className="mb-3 h-14 w-14 rounded-full object-cover" />
+        ) : null}
         <p><span className="font-medium">Name:</span> {user.name}</p>
         <p><span className="font-medium">Email:</span> {user.email}</p>
         <p><span className="font-medium">Role:</span> {user.role}</p>
@@ -44,6 +51,7 @@ export default async function ProfilePage() {
       </div>
 
       <ProfileForm initial={{ name: user.name, avatar: user.avatar ?? "", bio: user.bio ?? "" }} />
+      <ChangePasswordForm />
 
       <section className="rounded-lg border p-4">
         <h2 className="font-semibold">My activities</h2>

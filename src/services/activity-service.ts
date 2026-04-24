@@ -1,6 +1,9 @@
 import { ActivityMediaType } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 import { minioObjectUrl } from "@/lib/minio";
+import { minioObjectPathFromUrl } from "@/lib/media";
+import { getMinioClient, minioBucket } from "@/lib/minio";
 import { prisma } from "@/lib/prisma";
 import { ActivityInput, ActivityUpdateInput } from "@/lib/validators/activity";
 
@@ -25,11 +28,61 @@ export async function listPublicActivities() {
     where: { isPublic: true },
     include: {
       author: {
-        select: { id: true, name: true }
+        select: { id: true, name: true, avatar: true }
       }
     },
     orderBy: { updatedAt: "desc" }
   });
+}
+
+type ActivityListQuery = {
+  visibility: "public" | "mine" | "admin";
+  userId?: string;
+  search?: string;
+  ageGroup?: string;
+  category?: string;
+  season?: string;
+  locationType?: string;
+  complexityLevel?: string;
+  durationMin?: number;
+  durationMax?: number;
+  page: number;
+  pageSize: number;
+};
+
+export async function listActivitiesWithFilters(query: ActivityListQuery) {
+  const where: Prisma.ActivityWhereInput = {};
+  if (query.visibility === "public") where.isPublic = true;
+  if (query.visibility === "mine") where.authorId = query.userId;
+  if (query.search?.trim()) {
+    where.OR = [
+      { title: { contains: query.search, mode: "insensitive" } },
+      { summary: { contains: query.search, mode: "insensitive" } },
+      { tags: { hasSome: [query.search.trim().toLowerCase()] } }
+    ];
+  }
+  if (query.ageGroup) where.ageGroup = query.ageGroup;
+  if (query.category) where.category = query.category;
+  if (query.season) where.season = query.season;
+  if (query.locationType) where.locationType = query.locationType;
+  if (query.complexityLevel) where.complexityLevel = query.complexityLevel;
+  if (query.durationMin || query.durationMax) {
+    where.durationMinutes = {};
+    if (query.durationMin) where.durationMinutes.gte = query.durationMin;
+    if (query.durationMax) where.durationMinutes.lte = query.durationMax;
+  }
+
+  const [items, total] = await Promise.all([
+    prisma.activity.findMany({
+      where,
+      include: { author: { select: { id: true, name: true, avatar: true } } },
+      orderBy: { updatedAt: "desc" },
+      skip: (query.page - 1) * query.pageSize,
+      take: query.pageSize
+    }),
+    prisma.activity.count({ where })
+  ]);
+  return { items, total };
 }
 
 export async function listUserActivities(userId: string) {
@@ -37,7 +90,7 @@ export async function listUserActivities(userId: string) {
     where: { authorId: userId },
     include: {
       author: {
-        select: { id: true, name: true }
+        select: { id: true, name: true, avatar: true }
       }
     },
     orderBy: { updatedAt: "desc" }
@@ -49,7 +102,7 @@ export async function getActivityById(activityId: string, userId?: string) {
     where: { id: activityId },
     include: {
       author: {
-        select: { id: true, name: true }
+        select: { id: true, name: true, avatar: true }
       },
       sourceActivity: {
         select: {
@@ -187,6 +240,11 @@ export async function removeActivityMedia(activityId: string, mediaId: string, u
 
   if (!canManageActivity(user, media.activity)) {
     return { ok: false as const, status: 403, error: "You do not have permission to delete this media." };
+  }
+
+  const objectPath = minioObjectPathFromUrl(media.url);
+  if (objectPath) {
+    await getMinioClient().removeObject(minioBucket, objectPath).catch(() => null);
   }
 
   await prisma.activityMedia.delete({ where: { id: media.id } });

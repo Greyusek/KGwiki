@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { PlanForm } from "@/components/plans/plan-form";
 import { auth } from "@/lib/auth";
-import { listUserActivities } from "@/services/activity-service";
+import { prisma } from "@/lib/prisma";
 
 export default async function NewPlanPage() {
   const session = await auth();
@@ -10,7 +10,11 @@ export default async function NewPlanPage() {
     redirect("/login?callbackUrl=/plans/new");
   }
 
-  const activities = await listUserActivities(session.user.id);
+  const activities = await prisma.activity.findMany({
+    where: { OR: [{ authorId: session.user.id }, { isPublic: true }] },
+    select: { id: true, title: true },
+    orderBy: { title: "asc" }
+  });
   if (!activities.length) {
     return (
       <section className="space-y-2">

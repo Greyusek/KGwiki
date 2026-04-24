@@ -4,6 +4,13 @@ import { FormEvent, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import {
+  AGE_GROUP_OPTIONS,
+  CATEGORY_OPTIONS,
+  COMPLEXITY_OPTIONS,
+  LOCATION_TYPE_OPTIONS,
+  SEASON_OPTIONS
+} from "@/lib/activity-options";
 import { activityInputSchema } from "@/lib/validators/activity";
 
 type ActivityFormValues = {
@@ -138,12 +145,15 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
         <Field label="Title" required>
           <input className="w-full rounded-md border px-3 py-2 text-sm" value={values.title} onChange={(event) => setValues((prev) => ({ ...prev, title: event.target.value }))} required />
         </Field>
-        <Field label="Age group" required>
-          <input className="w-full rounded-md border px-3 py-2 text-sm" value={values.ageGroup} onChange={(event) => setValues((prev) => ({ ...prev, ageGroup: event.target.value }))} required />
+        <Field label="Age group" required helpText="Choose the primary developmental age this activity targets.">
+          <select className="w-full rounded-md border px-3 py-2 text-sm" value={values.ageGroup} onChange={(event) => setValues((prev) => ({ ...prev, ageGroup: event.target.value }))} required>
+            <option value="" disabled>Select age group</option>
+            {AGE_GROUP_OPTIONS.map((ageGroup) => <option key={ageGroup} value={ageGroup}>{ageGroup}</option>)}
+          </select>
         </Field>
       </div>
 
-      <Field label="Summary" required>
+      <Field label="Summary" required helpText="1-2 sentences to help teachers quickly understand the activity.">
         <textarea className="min-h-20 w-full rounded-md border px-3 py-2 text-sm" value={values.summary} onChange={(event) => setValues((prev) => ({ ...prev, summary: event.target.value }))} required />
       </Field>
 
@@ -151,33 +161,42 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
         <Field label="Duration (minutes)" required>
           <input type="number" min={5} max={1440} className="w-full rounded-md border px-3 py-2 text-sm" value={values.durationMinutes} onChange={(event) => setValues((prev) => ({ ...prev, durationMinutes: event.target.value }))} required />
         </Field>
-        <Field label="Category" required>
-          <input className="w-full rounded-md border px-3 py-2 text-sm" value={values.category} onChange={(event) => setValues((prev) => ({ ...prev, category: event.target.value }))} required />
+        <Field label="Category" required helpText="Select the main subject/format for discovery and filtering.">
+          <select className="w-full rounded-md border px-3 py-2 text-sm" value={values.category} onChange={(event) => setValues((prev) => ({ ...prev, category: event.target.value }))} required>
+            <option value="" disabled>Select category</option>
+            {CATEGORY_OPTIONS.map((category) => <option key={category} value={category}>{category}</option>)}
+          </select>
         </Field>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Location type" required>
-          <input className="w-full rounded-md border px-3 py-2 text-sm" value={values.locationType} onChange={(event) => setValues((prev) => ({ ...prev, locationType: event.target.value }))} required />
+        <Field label="Location type" required helpText="Where this works best in preschool settings.">
+          <select className="w-full rounded-md border px-3 py-2 text-sm" value={values.locationType} onChange={(event) => setValues((prev) => ({ ...prev, locationType: event.target.value }))} required>
+            <option value="" disabled>Select location type</option>
+            {LOCATION_TYPE_OPTIONS.map((locationType) => <option key={locationType} value={locationType}>{locationType}</option>)}
+          </select>
         </Field>
-        <Field label="Complexity level" required>
-          <input className="w-full rounded-md border px-3 py-2 text-sm" value={values.complexityLevel} onChange={(event) => setValues((prev) => ({ ...prev, complexityLevel: event.target.value }))} required />
+        <Field label="Complexity level" required helpText="Estimate prep/facilitation complexity for teachers.">
+          <select className="w-full rounded-md border px-3 py-2 text-sm" value={values.complexityLevel} onChange={(event) => setValues((prev) => ({ ...prev, complexityLevel: event.target.value }))} required>
+            <option value="" disabled>Select complexity</option>
+            {COMPLEXITY_OPTIONS.map((complexityLevel) => <option key={complexityLevel} value={complexityLevel}>{complexityLevel}</option>)}
+          </select>
         </Field>
       </div>
 
-      <Field label="Goal" required>
+      <Field label="Learning goal" required helpText="Main learning outcome children should achieve.">
         <textarea className="min-h-20 w-full rounded-md border px-3 py-2 text-sm" value={values.goal} onChange={(event) => setValues((prev) => ({ ...prev, goal: event.target.value }))} required />
       </Field>
 
-      <Field label="Description" required>
+      <Field label="Context and setup" required helpText="Describe setup, class context, and how to prepare before starting.">
         <textarea className="min-h-24 w-full rounded-md border px-3 py-2 text-sm" value={values.description} onChange={(event) => setValues((prev) => ({ ...prev, description: event.target.value }))} required />
       </Field>
 
-      <Field label="Objectives (one per line)">
+      <Field label="Specific objectives (one per line)" helpText="Break the learning goal into measurable child outcomes.">
         <textarea className="min-h-24 w-full rounded-md border px-3 py-2 text-sm" value={values.objectives} onChange={(event) => setValues((prev) => ({ ...prev, objectives: event.target.value }))} />
       </Field>
 
-      <Field label="Steps (one per line)">
+      <Field label="Activity steps (one per line)" helpText="Ordered facilitation steps for the teacher.">
         <textarea className="min-h-24 w-full rounded-md border px-3 py-2 text-sm" value={values.steps} onChange={(event) => setValues((prev) => ({ ...prev, steps: event.target.value }))} />
       </Field>
 
@@ -186,11 +205,14 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Tags (comma separated)">
+        <Field label="Tags (comma separated)" helpText="Up to 10 tags for quick search keywords.">
           <input className="w-full rounded-md border px-3 py-2 text-sm" value={values.tags} onChange={(event) => setValues((prev) => ({ ...prev, tags: event.target.value }))} />
         </Field>
         <Field label="Season">
-          <input className="w-full rounded-md border px-3 py-2 text-sm" value={values.season} onChange={(event) => setValues((prev) => ({ ...prev, season: event.target.value }))} />
+          <select className="w-full rounded-md border px-3 py-2 text-sm" value={values.season} onChange={(event) => setValues((prev) => ({ ...prev, season: event.target.value }))}>
+            <option value="">Not season-specific</option>
+            {SEASON_OPTIONS.map((season) => <option key={season} value={season}>{season}</option>)}
+          </select>
         </Field>
       </div>
 
@@ -215,11 +237,13 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
 function Field({
   label,
   required,
-  children
+  children,
+  helpText
 }: {
   label: string;
   required?: boolean;
   children: ReactNode;
+  helpText?: string;
 }) {
   return (
     <div className="space-y-1">
@@ -227,6 +251,7 @@ function Field({
         {label}
         {required ? " *" : ""}
       </p>
+      {helpText ? <p className="text-xs text-muted-foreground">{helpText}</p> : null}
       {children}
     </div>
   );

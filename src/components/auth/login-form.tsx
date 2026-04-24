@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 
@@ -69,6 +70,9 @@ export function LoginForm() {
         />
       </div>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      <p className="text-xs text-muted-foreground">
+        <Link href="/forgot-password" className="text-blue-600 hover:underline">Forgot password?</Link>
+      </p>
       <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
         {isSubmitting ? "Signing in..." : "Sign in"}
       </Button>
