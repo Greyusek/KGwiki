@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { AddToDayPlanButton } from "@/components/plans/add-to-day-plan-button";
+
 type ActivityCardProps = {
   activity: {
     id: string;
@@ -13,12 +15,14 @@ type ActivityCardProps = {
     author: {
       name: string;
       avatar?: string | null;
+      bio?: string | null;
     };
     updatedAt: Date;
   };
+  canAddToPlan?: boolean;
 };
 
-export function ActivityCard({ activity }: ActivityCardProps) {
+export function ActivityCard({ activity, canAddToPlan = false }: ActivityCardProps) {
   return (
     <article className="space-y-3 rounded-lg border bg-background p-4">
       <div className="flex items-start justify-between gap-3">
@@ -50,18 +54,21 @@ export function ActivityCard({ activity }: ActivityCardProps) {
           <dd>{activity.complexityLevel}</dd>
         </div>
       </dl>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        {activity.author.avatar ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={activity.author.avatar} alt={activity.author.name} className="h-6 w-6 rounded-full object-cover" />
-        ) : (
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border text-[10px]">
-            {activity.author.name.slice(0, 1).toUpperCase()}
+      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2">
+          {activity.author.avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={activity.author.avatar} alt={activity.author.name} className="h-6 w-6 rounded-full object-cover" title={activity.author.bio ?? "Bio not provided."} />
+          ) : (
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border text-[10px]" title={activity.author.bio ?? "Bio not provided."}>
+              {activity.author.name.slice(0, 1).toUpperCase()}
+            </span>
+          )}
+          <span title={activity.author.bio ?? "Bio not provided."}>
+            By {activity.author.name} · Updated {activity.updatedAt.toLocaleDateString()}
           </span>
-        )}
-        <span>
-          By {activity.author.name} · Updated {activity.updatedAt.toLocaleDateString()}
-        </span>
+        </div>
+        {canAddToPlan ? <AddToDayPlanButton activityId={activity.id} /> : null}
       </div>
     </article>
   );

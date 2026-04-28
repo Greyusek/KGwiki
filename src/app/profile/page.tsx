@@ -6,12 +6,15 @@ import { ProfileForm } from "@/components/profile/profile-form";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ searchParams }: { searchParams: Promise<{ size?: string }> }) {
   const session = await auth();
 
   if (!session?.user?.id) {
     redirect("/login?callbackUrl=/profile");
   }
+
+  const params = await searchParams;
+  const size = [5, 10, 15].includes(Number(params.size)) ? Number(params.size) : 5;
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -19,7 +22,7 @@ export default async function ProfilePage() {
       activities: {
         select: { id: true, title: true, sourceActivityId: true },
         orderBy: { updatedAt: "desc" },
-        take: 20
+        take: 60
       },
       plans: {
         select: { id: true, title: true, type: true, updatedAt: true },
@@ -33,51 +36,44 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
-  const originalActivities = user.activities.filter((activity) => !activity.sourceActivityId);
-  const adaptedActivities = user.activities.filter((activity) => Boolean(activity.sourceActivityId));
+  const originalActivities = user.activities.filter((activity) => !activity.sourceActivityId).slice(0, size);
+  const adaptedActivities = user.activities.filter((activity) => Boolean(activity.sourceActivityId)).slice(0, size);
 
   return (
     <section className="space-y-4">
       <h1 className="text-2xl font-semibold">Profile</h1>
       <div className="rounded-lg border bg-background p-4 text-sm">
-        {user.avatar ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={user.avatar} alt={user.name} className="mb-3 h-14 w-14 rounded-full object-cover" />
-        ) : null}
+        {user.avatar ? <img src={user.avatar} alt={user.name} className="mb-3 h-14 w-14 rounded-full object-cover" /> : null}
         <p><span className="font-medium">Name:</span> {user.name}</p>
         <p><span className="font-medium">Email:</span> {user.email}</p>
         <p><span className="font-medium">Role:</span> {user.role}</p>
         {user.bio ? <p><span className="font-medium">Bio:</span> {user.bio}</p> : <p className="text-muted-foreground">Bio not set.</p>}
       </div>
 
+      <form className="flex items-center gap-2 text-sm" method="GET">
+        <span>Profile list size</span>
+        <select name="size" defaultValue={String(size)} className="rounded border px-2 py-1">
+          {[5, 10, 15].map((value) => <option key={value} value={value}>{value}</option>)}
+        </select>
+        <button className="rounded bg-black px-2 py-1 text-white">Apply</button>
+      </form>
+
       <ProfileForm initial={{ name: user.name, avatar: user.avatar ?? "", bio: user.bio ?? "" }} />
       <ChangePasswordForm />
 
       <section className="rounded-lg border p-4">
         <h2 className="font-semibold">My activities</h2>
-        {originalActivities.length ? <ul className="mt-2 list-disc pl-5 text-sm">
-          {originalActivities.map((activity) => (
-            <li key={activity.id}><Link className="text-blue-600 hover:underline" href={`/activities/${activity.id}`}>{activity.title}</Link></li>
-          ))}
-        </ul> : <p className="mt-2 text-sm text-muted-foreground">No authored activities yet.</p>}
+        {originalActivities.length ? <ul className="mt-2 list-disc pl-5 text-sm">{originalActivities.map((activity) => (<li key={activity.id}><Link className="text-blue-600 hover:underline" href={`/activities/${activity.id}`}>{activity.title}</Link></li>))}</ul> : <p className="mt-2 text-sm text-muted-foreground">No authored activities yet.</p>}
       </section>
 
       <section className="rounded-lg border p-4">
         <h2 className="font-semibold">Adapted activities</h2>
-        {adaptedActivities.length ? <ul className="mt-2 list-disc pl-5 text-sm">
-          {adaptedActivities.map((activity) => (
-            <li key={activity.id}><Link className="text-blue-600 hover:underline" href={`/activities/${activity.id}`}>{activity.title}</Link></li>
-          ))}
-        </ul> : <p className="mt-2 text-sm text-muted-foreground">No adapted activities yet.</p>}
+        {adaptedActivities.length ? <ul className="mt-2 list-disc pl-5 text-sm">{adaptedActivities.map((activity) => (<li key={activity.id}><Link className="text-blue-600 hover:underline" href={`/activities/${activity.id}`}>{activity.title}</Link></li>))}</ul> : <p className="mt-2 text-sm text-muted-foreground">No adapted activities yet.</p>}
       </section>
 
       <section className="rounded-lg border p-4">
         <h2 className="font-semibold">My plans</h2>
-        {user.plans.length ? <ul className="mt-2 list-disc pl-5 text-sm">
-          {user.plans.map((plan) => (
-            <li key={plan.id}><Link className="text-blue-600 hover:underline" href={`/plans/${plan.id}`}>{plan.title}</Link> ({plan.type})</li>
-          ))}
-        </ul> : <p className="mt-2 text-sm text-muted-foreground">No plans yet.</p>}
+        {user.plans.length ? <ul className="mt-2 list-disc pl-5 text-sm">{user.plans.map((plan) => (<li key={plan.id}><Link className="text-blue-600 hover:underline" href={`/plans/${plan.id}`}>{plan.title}</Link> ({plan.type})</li>))}</ul> : <p className="mt-2 text-sm text-muted-foreground">No plans yet.</p>}
       </section>
     </section>
   );

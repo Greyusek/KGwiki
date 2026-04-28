@@ -164,7 +164,10 @@ model Plan {
   updatedAt     DateTime  @updatedAt
 
   author User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  items  PlanItem[]
+  items          PlanItem[]
+  weekDays       WeekPlanDay[] @relation("WeekParent")
+  attachedToWeek WeekPlanDay[] @relation("AttachedDayPlan")
+  inlineForWeek  WeekPlanDay[] @relation("InlineDayPlan")
 
   @@index([authorId, type])
   @@index([weekStartDate])
@@ -176,7 +179,7 @@ model PlanItem {
   planId      String
   activityId  String
   orderIndex  Int
-  plannedTime DateTime?
+  plannedTime String?
   notes       String?
 
   plan     Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
@@ -184,6 +187,25 @@ model PlanItem {
 
   @@unique([planId, orderIndex])
   @@index([activityId])
+}
+
+
+model WeekPlanDay {
+  id                String   @id @default(cuid())
+  weekPlanId        String
+  dayIndex          Int
+  attachedDayPlanId String?
+  inlineDayPlanId   String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  weekPlan        Plan  @relation("WeekParent", fields: [weekPlanId], references: [id], onDelete: Cascade)
+  attachedDayPlan Plan? @relation("AttachedDayPlan", fields: [attachedDayPlanId], references: [id], onDelete: SetNull)
+  inlineDayPlan   Plan? @relation("InlineDayPlan", fields: [inlineDayPlanId], references: [id], onDelete: SetNull)
+
+  @@unique([weekPlanId, dayIndex])
+  @@index([attachedDayPlanId])
+  @@index([inlineDayPlanId])
 }
 
 model Account {

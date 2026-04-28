@@ -1,287 +1,46 @@
-# TASKS.md
-
-# Autonomous Execution Plan for Codex
-
-## Operating Mode
-
-Execute autonomously and sequentially.
-
-Work strictly milestone-by-milestone.
-
-Never work on multiple milestones simultaneously.
-
-Do not skip verification.
-
-Commit after every completed milestone.
-
-If blocked:
-
-* choose the smallest maintainable implementation
-* document compromise
-* continue
-
----
-
-# Global Constraints (Do Not Break)
-
-Preserve:
-
-* existing auth flow
-* existing user/admin role model
-* existing migrations unless required
-* existing Docker setup
-* current working routes
-
-Do NOT:
-
-* add new roles
-* introduce major new features
-* refactor unrelated modules
-* replace existing stack choices
-* redesign architecture without necessity
-
-This is MVP completion, not platform redesign.
-
----
-
-# Mandatory Cycle For Every Milestone
-
-For each milestone:
-
-1. implement only current milestone scope
-
-2. run:
-
-```bash id="zhdj0p"
-npm run lint
-npm run build
-```
-
-If relevant:
-
-```bash id="wgd1f8"
-docker compose up -d
-```
-
-3. fix errors
-
-4. summarize:
-
-* implemented work
-* changed files
-* shortcuts taken
-* improvements for later
-* build status
-
-5. commit changes
-
-6. proceed to next milestone
-
-Never continue with failing build.
-
----
-
-# Phase 0 — Stability Audit
-
-Audit and fix:
-
-* broken routes
-* missing imports
-* TypeScript errors
-* Prisma inconsistencies
-* authorization bugs
-* ownership checks
-* env issues
-* Docker issues
-
-Goal:
-Reach stable baseline before feature work.
-
-Exit condition:
-Project builds successfully.
-
-Commit.
-
----
-
-# Phase 1 — Milestone 5 Media Uploads
-
-Implement:
-
-* activity uploads
-* feedback uploads
-* MinIO integration
-* metadata persistence
-* file deletion permissions
-* upload validation
-* simple upload UI
-* image preview if practical
-
-Priorities:
-
-1 stability
-2 correctness
-3 maintainability
-4 UX polish
-
-Avoid overengineering media pipeline.
-
-Exit condition:
-
-* upload flow works
-* files persist
-* ownership rules work
-
-Commit.
-
----
-
-# Phase 2 — Milestone 6 Planning
-
-Implement:
-
-Plan CRUD
-
-Plan types:
-
-* day
-* week
-
-Plan items:
-
-* add owned activities
-* ordering controls
-* optional notes
-* optional planned time
-
-Pages:
-
-* /plans
-* /plans/new
-* /plans/[id]
-* /plans/[id]/edit
-
-Permissions:
-
-* users own only
-* admin all
-
-Drag-drop optional.
-Use manual ordering if simpler.
-
-Exit condition:
-Plan workflow fully usable.
-
-Commit.
-
----
-
-# Phase 3 — Milestone 7 Profiles + Admin
-
-Implement:
-
-User profile:
-
-* profile page
-* activities
-* adapted activities
-* plans
-
-Profile editing:
-
-* name
-* avatar
-* bio
-
-Admin:
-
-* users
-* activities
-* plans
-* comments
-
-Simple practical admin UI.
-Tables are acceptable.
-
-Also improve:
-
-* demo seed data
-* README
-
-Exit condition:
-Full user/admin workflow complete.
-
-Commit.
-
----
-
-# Phase 4 — Milestone 8 Stabilization
-
-Focus only on:
-
-* consistency
-* weak points
-* technical debt
-* pilot readiness
-
-Improve:
-
-* routing
-* permissions
-* validation
-* loading/empty/error states
-* filters
-* mobile responsiveness
-
-Fix:
-
-* duplication
-* weak types
-* reuse problems
-
-Do NOT add features.
-
-Exit condition:
-Pilot-ready MVP.
-
-Commit.
-
----
-
-# Agent Guardrails
-
-If uncertain:
-
-Prefer:
-
-* simpler implementation
-* maintainable implementation
-* smaller change set
-
-Avoid:
-
-* speculative improvements
-* scope expansion
-* touching unrelated files
-
-If a requirement risks breaking existing system:
-
-* preserve working system
-* choose minimal acceptable implementation
-* document limitation
-
----
-
-# Execution Order
-
-Run only:
-
-Phase 0
-→ Phase 1
-→ Phase 2
-→ Phase 3
-→ Phase 4
-
-No reordering.
-
-Stop only when all phases completed.
+# TASKS.md — Iteration 2026-04-27
+
+## Archived (Completed in previous iteration)
+- ✅ Phase 0 — Stability audit and baseline fixes.
+- ✅ Phase 1 — Media upload endpoints/UI (MVP).
+- ✅ Phase 2 — Initial plans CRUD (legacy model, now archived).
+- ✅ Phase 3 — Profile and admin pages (initial MVP).
+- ✅ Phase 4 — Stabilization pass (routing/filters/empty states).
+
+## Active Tasks (Current iteration)
+
+### 1) Critical plans model redesign (highest priority)
+- [ ] Redesign **day plan** to use time-only schedule items with ordering.
+- [ ] Redesign **week plan** to contain day plans (attached or inline), not raw activities.
+- [ ] Ensure permissions: user owns edits, admin can edit all.
+
+### 2) Plans UX improvements
+- [ ] Separate day/week plans clearly on `/plans`.
+- [ ] Add plan type filter, search by title, pagination.
+- [ ] Show author, date/week start, and item/day counts on cards.
+
+### 3) Add-to-plan flow from activities
+- [ ] Keep manual dropdown add in plan form.
+- [ ] Add “Add to day plan” from activity detail.
+- [ ] Add “Add to day plan” from activity catalog cards.
+
+### 4) Profile pagination/compaction
+- [ ] Add 5/10/15 list size behavior for profile activity lists.
+
+### 5) Bio visibility improvements
+- [ ] Show bio clearly in profile.
+- [ ] Show bio tooltip/popover behavior on activity author display.
+
+### 6) Password reset security MVP hardening
+- [ ] Return generic forgot-password response (no account existence leak).
+- [ ] Log reset link only in dev/server logs.
+- [ ] Document behavior in README.
+
+### 7) Data + tests
+- [ ] Update seed data for nested day→week structure.
+- [ ] Add/update tests for day/week plan creation, sorting, add-to-day-plan, permissions.
+
+### 8) Quality audit before handoff
+- [ ] Run lint/build/tests.
+- [ ] Check migrations and routes.
+- [ ] Verify compatibility strategy for old week plan data.

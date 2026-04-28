@@ -88,24 +88,77 @@ async function main() {
     });
   }
 
-  const dayPlan = await prisma.plan.upsert({
+  const dayPlanA = await prisma.plan.upsert({
     where: { id: "cm-demo-plan-day-001" },
     update: { title: "Monday Language + Movement", type: "day", authorId: createdUsers["alice@kgwiki.local"], date: new Date("2026-04-20") },
     create: { id: "cm-demo-plan-day-001", title: "Monday Language + Movement", type: "day", authorId: createdUsers["alice@kgwiki.local"], date: new Date("2026-04-20") }
   });
-  await prisma.planItem.deleteMany({ where: { planId: dayPlan.id } });
+  await prisma.planItem.deleteMany({ where: { planId: dayPlanA.id } });
   await prisma.planItem.createMany({
-    data: activityIds.slice(0, 4).map((activityId, orderIndex) => ({ planId: dayPlan.id, activityId, orderIndex, notes: "Seeded day plan item" }))
+    data: activityIds.slice(0, 4).map((activityId, orderIndex) => ({ planId: dayPlanA.id, activityId, orderIndex, notes: "Seeded day plan item", plannedTime: ["09:00", "10:00", "11:15", null][orderIndex] }))
   });
 
-  const weekPlan = await prisma.plan.upsert({
+  const dayPlanB = await prisma.plan.upsert({
+    where: { id: "cm-demo-plan-day-002" },
+    update: { title: "Tuesday Arts + Science", type: "day", authorId: createdUsers["bob@kgwiki.local"], date: new Date("2026-04-21") },
+    create: { id: "cm-demo-plan-day-002", title: "Tuesday Arts + Science", type: "day", authorId: createdUsers["bob@kgwiki.local"], date: new Date("2026-04-21") }
+  });
+  await prisma.planItem.deleteMany({ where: { planId: dayPlanB.id } });
+  await prisma.planItem.createMany({
+    data: activityIds.slice(4, 8).map((activityId, orderIndex) => ({ planId: dayPlanB.id, activityId, orderIndex, notes: "Seeded day plan item", plannedTime: ["09:30", "10:45", null, "13:30"][orderIndex] }))
+  });
+
+  const dayPlanC = await prisma.plan.upsert({
+    where: { id: "cm-demo-plan-day-003" },
+    update: { title: "Wednesday Story + Play", type: "day", authorId: createdUsers["carol@kgwiki.local"], date: new Date("2026-04-22") },
+    create: { id: "cm-demo-plan-day-003", title: "Wednesday Story + Play", type: "day", authorId: createdUsers["carol@kgwiki.local"], date: new Date("2026-04-22") }
+  });
+  await prisma.planItem.deleteMany({ where: { planId: dayPlanC.id } });
+  await prisma.planItem.createMany({
+    data: activityIds.slice(8, 11).map((activityId, orderIndex) => ({ planId: dayPlanC.id, activityId, orderIndex, notes: "Seeded day plan item", plannedTime: ["08:45", "10:10", "11:40"][orderIndex] }))
+  });
+
+  const weekPlanA = await prisma.plan.upsert({
     where: { id: "cm-demo-plan-week-001" },
     update: { title: "Week 17 Thematic Plan", type: "week", authorId: createdUsers["bob@kgwiki.local"], weekStartDate: new Date("2026-04-20") },
     create: { id: "cm-demo-plan-week-001", title: "Week 17 Thematic Plan", type: "week", authorId: createdUsers["bob@kgwiki.local"], weekStartDate: new Date("2026-04-20") }
   });
-  await prisma.planItem.deleteMany({ where: { planId: weekPlan.id } });
-  await prisma.planItem.createMany({
-    data: activityIds.slice(4, 11).map((activityId, orderIndex) => ({ planId: weekPlan.id, activityId, orderIndex, notes: `Day ${orderIndex + 1} focus` }))
+
+  const weekPlanB = await prisma.plan.upsert({
+    where: { id: "cm-demo-plan-week-002" },
+    update: { title: "Week 18 Mixed Plan", type: "week", authorId: createdUsers["alice@kgwiki.local"], weekStartDate: new Date("2026-04-27") },
+    create: { id: "cm-demo-plan-week-002", title: "Week 18 Mixed Plan", type: "week", authorId: createdUsers["alice@kgwiki.local"], weekStartDate: new Date("2026-04-27") }
+  });
+
+  await prisma.planItem.deleteMany({ where: { planId: { in: [weekPlanA.id, weekPlanB.id] } } });
+  await prisma.weekPlanDay.deleteMany({ where: { weekPlanId: { in: [weekPlanA.id, weekPlanB.id] } } });
+
+  await prisma.weekPlanDay.createMany({
+    data: [
+      { weekPlanId: weekPlanA.id, dayIndex: 0, attachedDayPlanId: dayPlanA.id },
+      { weekPlanId: weekPlanA.id, dayIndex: 1, attachedDayPlanId: dayPlanB.id },
+      { weekPlanId: weekPlanA.id, dayIndex: 2, attachedDayPlanId: dayPlanC.id }
+    ]
+  });
+
+  const inlineDay = await prisma.plan.create({
+    data: {
+      authorId: createdUsers["alice@kgwiki.local"],
+      type: "day",
+      title: "Inline Thursday Focus",
+      date: new Date("2026-04-30"),
+      items: { create: [
+        { activityId: activityIds[12], orderIndex: 0, plannedTime: "09:20", notes: "Inline day item" },
+        { activityId: activityIds[13], orderIndex: 1, plannedTime: "10:30", notes: "Inline day item" }
+      ]}
+    }
+  });
+
+  await prisma.weekPlanDay.createMany({
+    data: [
+      { weekPlanId: weekPlanB.id, dayIndex: 0, attachedDayPlanId: dayPlanA.id },
+      { weekPlanId: weekPlanB.id, dayIndex: 1, inlineDayPlanId: inlineDay.id }
+    ]
   });
 
   console.log("Seed completed with realistic activities, comments, ratings, and plans.");

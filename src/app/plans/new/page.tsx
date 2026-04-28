@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import { PlanForm } from "@/components/plans/plan-form";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { listDayPlansForUser } from "@/services/plan-service";
 
 export default async function NewPlanPage() {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.user?.id || !session.user.role) {
     redirect("/login?callbackUrl=/plans/new");
   }
 
@@ -15,6 +16,8 @@ export default async function NewPlanPage() {
     select: { id: true, title: true },
     orderBy: { title: "asc" }
   });
+  const dayPlans = await listDayPlansForUser({ id: session.user.id, role: session.user.role });
+
   if (!activities.length) {
     return (
       <section className="space-y-2">
@@ -27,7 +30,7 @@ export default async function NewPlanPage() {
   return (
     <section className="space-y-3">
       <h1 className="text-2xl font-semibold">Create plan</h1>
-      <PlanForm activities={activities.map((activity) => ({ id: activity.id, title: activity.title }))} />
+      <PlanForm activities={activities} dayPlans={dayPlans.map((plan) => ({ id: plan.id, title: plan.title, date: plan.date?.toISOString() ?? "" }))} />
     </section>
   );
 }
