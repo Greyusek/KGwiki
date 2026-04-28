@@ -23,7 +23,6 @@ export const planSchema = z
   .object({
     type: z.enum(["day", "week"]),
     title: z.string().trim().min(2).max(120),
-    date: z.string().date().optional().nullable(),
     workingDays: z.number().int().min(2).max(6).optional(),
     items: z.array(dayPlanItemSchema).optional(),
     weekDays: z.array(weekDaySchema).optional()

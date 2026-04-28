@@ -5,10 +5,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPlanById, listDayPlansForUser } from "@/services/plan-service";
 
-function toDateInput(value: Date | null) {
-  return value ? value.toISOString().slice(0, 10) : "";
-}
-
 export default async function EditPlanPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user?.id || !session.user.role) {
@@ -36,7 +32,6 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
         initial={{
           type: plan.type,
           title: plan.title,
-          date: toDateInput(plan.date),
           workingDays: plan.weekDays.length || 5,
           items: plan.items.map((item) => ({
             activityId: item.activityId,

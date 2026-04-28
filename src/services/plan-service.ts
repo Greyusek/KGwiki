@@ -9,6 +9,40 @@ function ownerFilter(user: SessionUser): Prisma.PlanWhereInput {
   return user.role === "admin" ? {} : { authorId: user.id };
 }
 
+function accessibleAttachedDayPlanFilter(user: SessionUser): Prisma.PlanWhereInput {
+  return {
+    type: "day",
+    ...ownerFilter(user)
+  };
+}
+
+function buildWeekDayCreateInput(day: NonNullable<PlanInput["weekDays"]>[number], userId: string): Prisma.WeekPlanDayCreateWithoutWeekPlanInput {
+  return {
+    dayIndex: day.dayIndex,
+    ...(day.attachedDayPlanId ? { attachedDayPlan: { connect: { id: day.attachedDayPlanId } } } : {}),
+    ...(day.inlineDayPlan
+      ? {
+          inlineDayPlan: {
+            create: {
+              authorId: userId,
+              type: "day",
+              title: `Day ${day.dayIndex + 1}`,
+              date: null,
+              items: {
+                create: day.inlineDayPlan.items.map((item, index) => ({
+                  activityId: item.activityId,
+                  orderIndex: index,
+                  notes: item.notes ?? null,
+                  plannedTime: item.plannedTime ?? null
+                }))
+              }
+            }
+          }
+        }
+      : {})
+  };
+}
+
 function sortDayItems<T extends { plannedTime: string | null; orderIndex: number }>(items: T[]) {
   return [...items].sort((a, b) => {
     if (a.plannedTime && b.plannedTime) return a.plannedTime.localeCompare(b.plannedTime);
@@ -75,8 +109,8 @@ export async function listPlans(user: SessionUser, query?: { type?: "day" | "wee
 
 export async function listDayPlansForUser(user: SessionUser) {
   return prisma.plan.findMany({
-    where: { ...ownerFilter(user), type: "day", inlineForWeek: { none: {} } },
-    select: { id: true, title: true, date: true },
+    where: accessibleAttachedDayPlanFilter(user),
+    select: { id: true, title: true },
     orderBy: { updatedAt: "desc" }
   });
 }
@@ -110,7 +144,7 @@ export async function createPlan(input: PlanInput, user: SessionUser) {
         authorId: user.id,
         type: "day",
         title: input.title,
-        date: input.date ? new Date(input.date) : null,
+        date: null,
         items: {
           create: (input.items ?? []).map((item, index) => ({
             activityId: item.activityId,
@@ -132,16 +166,16 @@ export async function createPlan(input: PlanInput, user: SessionUser) {
   ));
 
   if (attachedIds.length) {
+    const uniqueAttachedIds = [...new Set(attachedIds)];
     const validAttachedPlans = await prisma.plan.findMany({
       where: {
-        id: { in: attachedIds },
-        type: "day",
-        ...(user.role === "admin" ? {} : { authorId: user.id })
+        id: { in: uniqueAttachedIds },
+        ...accessibleAttachedDayPlanFilter(user)
       },
       select: { id: true }
     });
 
-    if (validAttachedPlans.length !== attachedIds.length) {
+    if (validAttachedPlans.length !== uniqueAttachedIds.length) {
       throw new Error("Some attached day plans are invalid or inaccessible.");
     }
   }
@@ -152,28 +186,7 @@ export async function createPlan(input: PlanInput, user: SessionUser) {
       type: "week",
       title: input.title,
       weekDays: {
-        create: weekDays.map((day) => ({
-          dayIndex: day.dayIndex,
-          attachedDayPlanId: day.attachedDayPlanId ?? null,
-          inlineDayPlan: day.inlineDayPlan
-            ? {
-                create: {
-                  authorId: user.id,
-                  type: "day",
-                  title: `Day ${day.dayIndex + 1}`,
-                  date: null,
-                  items: {
-                    create: day.inlineDayPlan.items.map((item, index) => ({
-                      activityId: item.activityId,
-                      orderIndex: index,
-                      notes: item.notes ?? null,
-                      plannedTime: item.plannedTime ?? null
-                    }))
-                  }
-                }
-              }
-            : undefined
-        }))
+        create: weekDays.map((day) => buildWeekDayCreateInput(day, user.id))
       }
     }
   });
@@ -193,16 +206,16 @@ export async function updatePlan(id: string, input: PlanInput, user: SessionUser
     ));
 
     if (attachedIds.length) {
+      const uniqueAttachedIds = [...new Set(attachedIds)];
       const validAttachedPlans = await prisma.plan.findMany({
         where: {
-          id: { in: attachedIds },
-          type: "day",
-          ...(user.role === "admin" ? {} : { authorId: user.id })
+          id: { in: uniqueAttachedIds },
+          ...accessibleAttachedDayPlanFilter(user)
         },
         select: { id: true }
       });
 
-      if (validAttachedPlans.length !== attachedIds.length) {
+      if (validAttachedPlans.length !== uniqueAttachedIds.length) {
         return { ok: false as const, status: 400, error: "Some attached day plans are invalid or inaccessible." };
       }
     }
@@ -215,7 +228,7 @@ export async function updatePlan(id: string, input: PlanInput, user: SessionUser
         data: {
           type: "day",
           title: input.title,
-          date: input.date ? new Date(input.date) : null,
+          date: null,
           weekDays: { deleteMany: {} },
           items: {
             deleteMany: {},
@@ -245,28 +258,7 @@ export async function updatePlan(id: string, input: PlanInput, user: SessionUser
         date: null,
         items: { deleteMany: {} },
         weekDays: {
-          create: (input.weekDays ?? []).map((day) => ({
-            dayIndex: day.dayIndex,
-            attachedDayPlanId: day.attachedDayPlanId ?? null,
-            inlineDayPlan: day.inlineDayPlan
-              ? {
-                  create: {
-                    authorId: user.id,
-                    type: "day",
-                    title: `Day ${day.dayIndex + 1}`,
-                    date: null,
-                    items: {
-                      create: day.inlineDayPlan.items.map((item, index) => ({
-                        activityId: item.activityId,
-                        orderIndex: index,
-                        notes: item.notes ?? null,
-                        plannedTime: item.plannedTime ?? null
-                      }))
-                    }
-                  }
-                }
-              : undefined
-          }))
+          create: (input.weekDays ?? []).map((day) => buildWeekDayCreateInput(day, user.id))
         }
       }
     });
