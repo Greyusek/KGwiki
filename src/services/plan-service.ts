@@ -75,7 +75,7 @@ export async function listPlans(user: SessionUser, query?: { type?: "day" | "wee
 
 export async function listDayPlansForUser(user: SessionUser) {
   return prisma.plan.findMany({
-    where: { ...ownerFilter(user), type: "day" },
+    where: { ...ownerFilter(user), type: "day", date: { not: null } },
     select: { id: true, title: true, date: true },
     orderBy: { updatedAt: "desc" }
   });
@@ -125,6 +125,26 @@ export async function createPlan(input: PlanInput, user: SessionUser) {
   }
 
   const weekDays = input.weekDays ?? [];
+  const attachedIds = weekDays
+    .map((day) => day.attachedDayPlanId)
+    .filter((value): value is string => Boolean(value));
+
+  if (attachedIds.length) {
+    const validAttachedPlans = await prisma.plan.findMany({
+      where: {
+        id: { in: attachedIds },
+        type: "day",
+        date: { not: null },
+        ...(user.role === "admin" ? {} : { authorId: user.id })
+      },
+      select: { id: true }
+    });
+
+    if (validAttachedPlans.length !== attachedIds.length) {
+      throw new Error("Some attached day plans are invalid or inaccessible.");
+    }
+  }
+
   const plan = await prisma.plan.create({
     data: {
       authorId: user.id,
@@ -163,6 +183,28 @@ export async function createPlan(input: PlanInput, user: SessionUser) {
 export async function updatePlan(id: string, input: PlanInput, user: SessionUser) {
   const existing = await prisma.plan.findFirst({ where: { id, ...ownerFilter(user) }, select: { id: true } });
   if (!existing) return { ok: false as const, status: 404, error: "Plan not found." };
+
+  if (input.type === "week") {
+    const attachedIds = (input.weekDays ?? [])
+      .map((day) => day.attachedDayPlanId)
+      .filter((value): value is string => Boolean(value));
+
+    if (attachedIds.length) {
+      const validAttachedPlans = await prisma.plan.findMany({
+        where: {
+          id: { in: attachedIds },
+          type: "day",
+          date: { not: null },
+          ...(user.role === "admin" ? {} : { authorId: user.id })
+        },
+        select: { id: true }
+      });
+
+      if (validAttachedPlans.length !== attachedIds.length) {
+        return { ok: false as const, status: 400, error: "Some attached day plans are invalid or inaccessible." };
+      }
+    }
+  }
 
   const updated = await prisma.$transaction(async (tx) => {
     if (input.type === "day") {
