@@ -15,8 +15,8 @@ const weekDaySchema = z.object({
   dayIndex: z.number().int().min(0),
   attachedDayPlanId: z.string().min(1).optional().nullable(),
   inlineDayPlan: createInlineDaySchema.optional().nullable()
-}).refine((value) => Boolean(value.attachedDayPlanId) || Boolean(value.inlineDayPlan), {
-  message: "Each week day must reference an existing day plan or define an inline day plan."
+}).refine((value) => Boolean(value.attachedDayPlanId) !== Boolean(value.inlineDayPlan), {
+  message: "Each week day must either attach a day plan or define an inline day plan."
 });
 
 export const planSchema = z
@@ -42,6 +42,14 @@ export const planSchema = z
   })
   .refine((value) => (value.type === "week" ? (value.weekDays?.length ?? 0) === value.workingDays : true), {
     message: "Week plans must provide day entries for each working day.",
+    path: ["weekDays"]
+  })
+  .refine((value) => {
+    if (value.type !== "week" || !value.weekDays) return true;
+    const sorted = [...value.weekDays].sort((a, b) => a.dayIndex - b.dayIndex);
+    return sorted.every((entry, index) => entry.dayIndex === index);
+  }, {
+    message: "Week day indexes must be sequential and start from day 0.",
     path: ["weekDays"]
   });
 

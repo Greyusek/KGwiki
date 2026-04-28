@@ -35,6 +35,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input." }, { status: 400 });
   }
 
-  const plan = await createPlan(parsed.data, { id: session.user.id, role: session.user.role });
-  return NextResponse.json({ data: plan }, { status: 201 });
+  try {
+    const plan = await createPlan(parsed.data, { id: session.user.id, role: session.user.role });
+    return NextResponse.json({ data: plan }, { status: 201 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to create plan.";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
 }
