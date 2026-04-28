@@ -179,8 +179,8 @@ export function PlanForm({
         <>
           <label className="space-y-1 text-sm">
             <span className="font-medium">Date</span>
-            <p className="text-xs text-muted-foreground">Day plans remain date-based. Week plans are not.</p>
-            <input type="date" className="w-full rounded-md border px-3 py-2" value={date} onChange={(event) => setDate(event.target.value)} required />
+            <p className="text-xs text-muted-foreground">Optional for day templates. Leave empty when no fixed date is needed.</p>
+            <input type="date" className="w-full rounded-md border px-3 py-2" value={date} onChange={(event) => setDate(event.target.value)} />
           </label>
           <div className="space-y-3">
             <h2 className="font-semibold">Day activities</h2>

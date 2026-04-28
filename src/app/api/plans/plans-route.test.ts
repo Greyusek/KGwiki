@@ -16,7 +16,6 @@ describe("plans routes", () => {
       body: JSON.stringify({
         type: "day",
         title: "Day A",
-        date: "2026-04-27",
         items: [{ activityId: "a1", orderIndex: 0, plannedTime: "09:30" }]
       })
     }));
@@ -98,7 +97,6 @@ describe("plans routes", () => {
       body: JSON.stringify({
         type: "day",
         title: "Day A",
-        date: "2026-04-27",
         items: [{ activityId: "a1", orderIndex: 0, plannedTime: "09:30" }]
       })
     }), { params: Promise.resolve({ id: "p1" }) });

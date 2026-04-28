@@ -28,10 +28,6 @@ export const planSchema = z
     items: z.array(dayPlanItemSchema).optional(),
     weekDays: z.array(weekDaySchema).optional()
   })
-  .refine((value) => (value.type === "day" ? Boolean(value.date) : true), {
-    message: "Day plans require a date.",
-    path: ["date"]
-  })
   .refine((value) => (value.type === "day" ? (value.items?.length ?? 0) > 0 : true), {
     message: "Day plans require at least one activity.",
     path: ["items"]
