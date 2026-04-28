@@ -130,7 +130,6 @@ export async function createPlan(input: PlanInput, user: SessionUser) {
       authorId: user.id,
       type: "week",
       title: input.title,
-      weekStartDate: new Date(input.weekStartDate!),
       weekDays: {
         create: weekDays.map((day) => ({
           dayIndex: day.dayIndex,
@@ -140,8 +139,8 @@ export async function createPlan(input: PlanInput, user: SessionUser) {
                 create: {
                   authorId: user.id,
                   type: "day",
-                  title: day.inlineDayPlan.title,
-                  date: new Date(day.inlineDayPlan.date),
+                  title: `Day ${day.dayIndex + 1}`,
+                  date: null,
                   items: {
                     create: day.inlineDayPlan.items.map((item, index) => ({
                       activityId: item.activityId,
@@ -173,7 +172,6 @@ export async function updatePlan(id: string, input: PlanInput, user: SessionUser
           type: "day",
           title: input.title,
           date: new Date(input.date!),
-          weekStartDate: null,
           weekDays: { deleteMany: {} },
           items: {
             deleteMany: {},
@@ -201,7 +199,6 @@ export async function updatePlan(id: string, input: PlanInput, user: SessionUser
         type: "week",
         title: input.title,
         date: null,
-        weekStartDate: new Date(input.weekStartDate!),
         items: { deleteMany: {} },
         weekDays: {
           create: (input.weekDays ?? []).map((day) => ({
@@ -212,8 +209,8 @@ export async function updatePlan(id: string, input: PlanInput, user: SessionUser
                   create: {
                     authorId: user.id,
                     type: "day",
-                    title: day.inlineDayPlan.title,
-                    date: new Date(day.inlineDayPlan.date),
+                    title: `Day ${day.dayIndex + 1}`,
+                    date: null,
                     items: {
                       create: day.inlineDayPlan.items.map((item, index) => ({
                         activityId: item.activityId,

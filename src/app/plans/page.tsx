@@ -59,7 +59,7 @@ export default async function PlansPage({
               <Link href={`/plans/${plan.id}`} className="font-medium text-blue-600 hover:underline">{plan.title}</Link>
               <p className="text-sm text-muted-foreground">
                 {plan.type === "day" ? "Day plan" : "Week plan"} · Author: {plan.author.name} ·
-                {plan.type === "day" ? ` Date: ${plan.date?.toLocaleDateString() ?? "-"} · Activities: ${plan.items.length}` : ` Week start: ${plan.weekStartDate?.toLocaleDateString() ?? "-"} · Days: ${plan.weekDays.length}`}
+                {plan.type === "day" ? ` Date: ${plan.date?.toLocaleDateString() ?? "-"} · Activities: ${plan.items.length}` : ` Working days: ${plan.weekDays.length}`}
               </p>
             </li>
           ))}

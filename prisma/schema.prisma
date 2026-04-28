@@ -159,7 +159,6 @@ model Plan {
   type          PlanType
   title         String
   date          DateTime?
-  weekStartDate DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -170,7 +169,6 @@ model Plan {
   inlineForWeek  WeekPlanDay[] @relation("InlineDayPlan")
 
   @@index([authorId, type])
-  @@index([weekStartDate])
   @@index([date])
 }
 
