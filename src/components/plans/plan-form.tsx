@@ -45,7 +45,6 @@ export function PlanForm({
   initial?: {
     type: "day" | "week";
     title: string;
-    date: string;
     workingDays: number;
     items: PlanItemInput[];
     weekDays: WeekDayInput[];
@@ -57,7 +56,6 @@ export function PlanForm({
   const [busy, setBusy] = useState(false);
   const [type, setType] = useState<"day" | "week">(initial?.type ?? "day");
   const [title, setTitle] = useState(initial?.title ?? "");
-  const [date, setDate] = useState(initial?.date ?? "");
   const [items, setItems] = useState<PlanItemInput[]>(
     initial?.items.length ? initial.items : [createEmptyPlanItem(activities)]
   );
@@ -108,7 +106,6 @@ export function PlanForm({
       ? {
           type,
           title,
-          date,
           workingDays: undefined,
           items: items.map((item, index) => ({
             activityId: item.activityId,
@@ -120,7 +117,6 @@ export function PlanForm({
       : {
           type,
           title,
-          date: null,
           workingDays,
           weekDays: visibleWeekDays.map((day, index) => ({
             dayIndex: index,
@@ -163,6 +159,7 @@ export function PlanForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="space-y-1 text-sm">
           <span className="font-medium">Plan type</span>
+          <p className="text-xs text-muted-foreground">Day template is a reusable schedule made from activities. Week template is a reusable set of day templates.</p>
           <select className="w-full rounded-md border px-3 py-2" value={type} onChange={(event) => setType(event.target.value as "day" | "week")}>
             <option value="day">Day</option>
             <option value="week">Week</option>
@@ -177,17 +174,13 @@ export function PlanForm({
 
       {type === "day" ? (
         <>
-          <label className="space-y-1 text-sm">
-            <span className="font-medium">Date</span>
-            <p className="text-xs text-muted-foreground">Day plans remain date-based. Week plans are not.</p>
-            <input type="date" className="w-full rounded-md border px-3 py-2" value={date} onChange={(event) => setDate(event.target.value)} required />
-          </label>
           <div className="space-y-3">
             <h2 className="font-semibold">Day activities</h2>
             {items.map((item, index) => (
               <div key={index} className="grid gap-2 rounded-md border p-3 sm:grid-cols-2">
                 <label className="space-y-1 text-sm">
                   <span className="font-medium">Activity</span>
+                  <p className="text-xs text-muted-foreground">Choose an activity to include in this day. Activities may be your own, copied, or public.</p>
                   <select className="w-full rounded-md border px-3 py-2" value={item.activityId} onChange={(event) => updateItem(index, { activityId: event.target.value })} required>
                     {activities.map((activity) => (<option key={activity.id} value={activity.id}>{activity.title}</option>))}
                   </select>
@@ -236,9 +229,13 @@ export function PlanForm({
                   <div className="space-y-2">
                     {day.inlineItems.map((item, itemIndex) => (
                       <div key={itemIndex} className="grid gap-2 rounded border p-2 sm:grid-cols-2">
-                        <select className="rounded border px-2 py-1 text-sm" value={item.activityId} onChange={(event) => updateInlineItem(day.dayIndex, itemIndex, { activityId: event.target.value })}>
-                          {activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}
-                        </select>
+                        <label className="space-y-1 text-sm sm:col-span-2">
+                          <span className="font-medium">Activity</span>
+                          <p className="text-xs text-muted-foreground">Choose an activity to include in this day. Activities may be your own, copied, or public.</p>
+                          <select className="w-full rounded border px-2 py-1 text-sm" value={item.activityId} onChange={(event) => updateInlineItem(day.dayIndex, itemIndex, { activityId: event.target.value })}>
+                            {activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}
+                          </select>
+                        </label>
                         <input type="time" className="rounded border px-2 py-1 text-sm" value={item.plannedTime} onChange={(event) => updateInlineItem(day.dayIndex, itemIndex, { plannedTime: event.target.value })} />
                         <textarea className="rounded border px-2 py-1 text-sm sm:col-span-2" placeholder="Notes (optional)" value={item.notes} onChange={(event) => updateInlineItem(day.dayIndex, itemIndex, { notes: event.target.value })} />
                         {day.inlineItems.length > 1 ? (
