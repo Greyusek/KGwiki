@@ -14,13 +14,13 @@ const stringListField = z
 const tagsField = z.array(z.string().trim().min(1).max(200)).max(10, "Maximum 10 tags allowed.").default([]);
 
 export const activityInputSchema = z.object({
-  title: z.string().trim().min(3).max(140),
-  summary: z.string().trim().min(10).max(400),
+  title: z.string().trim().min(3, "Title must be at least 3 characters.").max(140),
+  summary: z.string().trim().min(10, "Summary must be at least 10 characters.").max(400),
   ageGroup: z.enum(AGE_GROUP_OPTIONS),
   durationMinutes: z.number().int().min(5).max(1440),
-  goal: z.string().trim().min(10).max(500),
+  goal: z.string().trim().min(10, "Learning goal must be at least 10 characters.").max(500),
   objectives: stringListField,
-  description: z.string().trim().min(20).max(5000),
+  description: z.string().trim().min(20, "Context and setup must be at least 20 characters.").max(5000),
   steps: stringListField,
   materialsNeeded: stringListField,
   category: z.enum(CATEGORY_OPTIONS),

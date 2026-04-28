@@ -120,14 +120,14 @@ async function main() {
 
   const weekPlanA = await prisma.plan.upsert({
     where: { id: "cm-demo-plan-week-001" },
-    update: { title: "Week 17 Thematic Plan", type: "week", authorId: createdUsers["bob@kgwiki.local"], weekStartDate: new Date("2026-04-20") },
-    create: { id: "cm-demo-plan-week-001", title: "Week 17 Thematic Plan", type: "week", authorId: createdUsers["bob@kgwiki.local"], weekStartDate: new Date("2026-04-20") }
+    update: { title: "Week 17 Thematic Plan", type: "week", authorId: createdUsers["bob@kgwiki.local"] },
+    create: { id: "cm-demo-plan-week-001", title: "Week 17 Thematic Plan", type: "week", authorId: createdUsers["bob@kgwiki.local"] }
   });
 
   const weekPlanB = await prisma.plan.upsert({
     where: { id: "cm-demo-plan-week-002" },
-    update: { title: "Week 18 Mixed Plan", type: "week", authorId: createdUsers["alice@kgwiki.local"], weekStartDate: new Date("2026-04-27") },
-    create: { id: "cm-demo-plan-week-002", title: "Week 18 Mixed Plan", type: "week", authorId: createdUsers["alice@kgwiki.local"], weekStartDate: new Date("2026-04-27") }
+    update: { title: "Week 18 Mixed Plan", type: "week", authorId: createdUsers["alice@kgwiki.local"] },
+    create: { id: "cm-demo-plan-week-002", title: "Week 18 Mixed Plan", type: "week", authorId: createdUsers["alice@kgwiki.local"] }
   });
 
   await prisma.planItem.deleteMany({ where: { planId: { in: [weekPlanA.id, weekPlanB.id] } } });
@@ -145,8 +145,8 @@ async function main() {
     data: {
       authorId: createdUsers["alice@kgwiki.local"],
       type: "day",
-      title: "Inline Thursday Focus",
-      date: new Date("2026-04-30"),
+      title: "Day 2",
+      date: null,
       items: { create: [
         { activityId: activityIds[12], orderIndex: 0, plannedTime: "09:20", notes: "Inline day item" },
         { activityId: activityIds[13], orderIndex: 1, plannedTime: "10:30", notes: "Inline day item" }

@@ -32,12 +32,12 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
       <PlanForm
         planId={plan.id}
         activities={activities}
-        dayPlans={dayPlans.map((entry) => ({ id: entry.id, title: entry.title, date: entry.date?.toISOString() ?? "" }))}
+        dayPlans={dayPlans.map((entry) => ({ id: entry.id, title: entry.title }))}
         initial={{
           type: plan.type,
           title: plan.title,
           date: toDateInput(plan.date),
-          weekStartDate: toDateInput(plan.weekStartDate),
+          workingDays: plan.weekDays.length || 5,
           items: plan.items.map((item) => ({
             activityId: item.activityId,
             notes: item.notes ?? "",
@@ -47,8 +47,6 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
             dayIndex: index,
             mode: day.attachedDayPlanId ? "attach" : "inline",
             attachedDayPlanId: day.attachedDayPlanId ?? dayPlans[0]?.id ?? "",
-            inlineTitle: day.inlineDayPlan?.title ?? `Day ${index + 1}`,
-            inlineDate: toDateInput(day.inlineDayPlan?.date ?? null),
             inlineItems: (day.inlineDayPlan?.items ?? [{ activityId: activities[0]?.id ?? "", plannedTime: null, notes: null, orderIndex: 0 }]).map((item) => ({
               activityId: item.activityId,
               plannedTime: item.plannedTime ?? "",

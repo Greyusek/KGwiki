@@ -6,7 +6,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 type ActivityOption = { id: string; title: string };
-type DayPlanOption = { id: string; title: string; date: string };
+type DayPlanOption = { id: string; title: string };
 
 type PlanItemInput = {
   activityId: string;
@@ -18,8 +18,6 @@ type WeekDayInput = {
   dayIndex: number;
   mode: "attach" | "inline";
   attachedDayPlanId: string;
-  inlineTitle: string;
-  inlineDate: string;
   inlineItems: PlanItemInput[];
 };
 
@@ -35,7 +33,7 @@ export function PlanForm({
     type: "day" | "week";
     title: string;
     date: string;
-    weekStartDate: string;
+    workingDays: number;
     items: PlanItemInput[];
     weekDays: WeekDayInput[];
   };
@@ -47,9 +45,8 @@ export function PlanForm({
   const [type, setType] = useState<"day" | "week">(initial?.type ?? "day");
   const [title, setTitle] = useState(initial?.title ?? "");
   const [date, setDate] = useState(initial?.date ?? "");
-  const [weekStartDate, setWeekStartDate] = useState(initial?.weekStartDate ?? "");
   const [items, setItems] = useState<PlanItemInput[]>(initial?.items.length ? initial.items : [{ activityId: activities[0]?.id ?? "", notes: "", plannedTime: "" }]);
-  const [workingDays, setWorkingDays] = useState<number>(initial?.weekDays.length ?? 5);
+  const [workingDays, setWorkingDays] = useState<number>(initial?.workingDays ?? 5);
   const [weekDays, setWeekDays] = useState<WeekDayInput[]>(
     initial?.weekDays.length
       ? initial.weekDays
@@ -57,8 +54,6 @@ export function PlanForm({
           dayIndex: index,
           mode: "attach",
           attachedDayPlanId: dayPlans[0]?.id ?? "",
-          inlineTitle: `Day ${index + 1}`,
-          inlineDate: "",
           inlineItems: [{ activityId: activities[0]?.id ?? "", notes: "", plannedTime: "" }]
         }))
   );
@@ -89,7 +84,7 @@ export function PlanForm({
           type,
           title,
           date,
-          weekStartDate: null,
+          workingDays: undefined,
           items: items.map((item, index) => ({
             activityId: item.activityId,
             orderIndex: index,
@@ -101,13 +96,11 @@ export function PlanForm({
           type,
           title,
           date: null,
-          weekStartDate,
+          workingDays,
           weekDays: visibleWeekDays.map((day, index) => ({
             dayIndex: index,
             attachedDayPlanId: day.mode === "attach" ? day.attachedDayPlanId : null,
             inlineDayPlan: day.mode === "inline" ? {
-              title: day.inlineTitle,
-              date: day.inlineDate,
               items: day.inlineItems.map((item, itemIndex) => ({
                 activityId: item.activityId,
                 orderIndex: itemIndex,
@@ -147,6 +140,7 @@ export function PlanForm({
         </label>
         <label className="space-y-1 text-sm">
           <span className="font-medium">Title</span>
+          <p className="text-xs text-muted-foreground">Use a concise plan name (minimum 2 characters).</p>
           <input className="w-full rounded-md border px-3 py-2" value={title} onChange={(event) => setTitle(event.target.value)} required />
         </label>
       </div>
@@ -155,6 +149,7 @@ export function PlanForm({
         <>
           <label className="space-y-1 text-sm">
             <span className="font-medium">Date</span>
+            <p className="text-xs text-muted-foreground">Day plans remain date-based. Week plans are not.</p>
             <input type="date" className="w-full rounded-md border px-3 py-2" value={date} onChange={(event) => setDate(event.target.value)} required />
           </label>
           <div className="space-y-3">
@@ -169,10 +164,12 @@ export function PlanForm({
                 </label>
                 <label className="space-y-1 text-sm">
                   <span className="font-medium">Planned time (optional)</span>
+                  <p className="text-xs text-muted-foreground">Leave empty to place activity after timed items.</p>
                   <input type="time" className="w-full rounded-md border px-3 py-2" value={item.plannedTime} onChange={(event) => updateItem(index, { plannedTime: event.target.value })} />
                 </label>
                 <label className="space-y-1 text-sm sm:col-span-2">
                   <span className="font-medium">Notes (optional)</span>
+                  <p className="text-xs text-muted-foreground">Add reminders, preparation notes, or adaptation hints.</p>
                   <textarea className="w-full rounded-md border px-3 py-2" value={item.notes} onChange={(event) => updateItem(index, { notes: event.target.value })} />
                 </label>
               </div>
@@ -183,10 +180,6 @@ export function PlanForm({
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="space-y-1 text-sm">
-              <span className="font-medium">Week start date</span>
-              <input type="date" className="w-full rounded-md border px-3 py-2" value={weekStartDate} onChange={(event) => setWeekStartDate(event.target.value)} required />
-            </label>
             <label className="space-y-1 text-sm">
               <span className="font-medium">Working days</span>
               <select className="w-full rounded-md border px-3 py-2" value={workingDays} onChange={(event) => setWorkingDays(Number(event.target.value))}>
@@ -211,16 +204,27 @@ export function PlanForm({
                   </select>
                 ) : (
                   <div className="space-y-2">
-                    <input className="w-full rounded border px-2 py-1 text-sm" placeholder="Inline day title" value={day.inlineTitle} onChange={(event) => updateWeekDay(index, { inlineTitle: event.target.value })} />
-                    <input type="date" className="w-full rounded border px-2 py-1 text-sm" value={day.inlineDate} onChange={(event) => updateWeekDay(index, { inlineDate: event.target.value })} />
                     {day.inlineItems.map((item, itemIndex) => (
-                      <div key={itemIndex} className="grid gap-2 sm:grid-cols-2">
+                      <div key={itemIndex} className="grid gap-2 rounded border p-2 sm:grid-cols-2">
                         <select className="rounded border px-2 py-1 text-sm" value={item.activityId} onChange={(event) => updateInlineItem(index, itemIndex, { activityId: event.target.value })}>
                           {activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title}</option>)}
                         </select>
                         <input type="time" className="rounded border px-2 py-1 text-sm" value={item.plannedTime} onChange={(event) => updateInlineItem(index, itemIndex, { plannedTime: event.target.value })} />
+                        <textarea className="rounded border px-2 py-1 text-sm sm:col-span-2" placeholder="Notes (optional)" value={item.notes} onChange={(event) => updateInlineItem(index, itemIndex, { notes: event.target.value })} />
+                        {day.inlineItems.length > 1 ? (
+                          <Button type="button" variant="outline" className="sm:col-span-2" onClick={() => updateWeekDay(index, { inlineItems: day.inlineItems.filter((_, idx) => idx !== itemIndex) })}>
+                            Remove activity
+                          </Button>
+                        ) : null}
                       </div>
                     ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => updateWeekDay(index, { inlineItems: [...day.inlineItems, { activityId: activities[0]?.id ?? "", notes: "", plannedTime: "" }] })}
+                    >
+                      Add activity
+                    </Button>
                   </div>
                 )}
               </div>

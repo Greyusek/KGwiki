@@ -30,7 +30,7 @@ export default async function NewPlanPage() {
   return (
     <section className="space-y-3">
       <h1 className="text-2xl font-semibold">Create plan</h1>
-      <PlanForm activities={activities} dayPlans={dayPlans.map((plan) => ({ id: plan.id, title: plan.title, date: plan.date?.toISOString() ?? "" }))} />
+      <PlanForm activities={activities} dayPlans={dayPlans.map((plan) => ({ id: plan.id, title: plan.title }))} />
     </section>
   );
 }

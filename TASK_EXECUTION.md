@@ -1,28 +1,20 @@
-# TASK_EXECUTION.md / TASKS_EXECUTION.md — Iteration 2026-04-27
+# TASK_EXECUTION.md — Iteration 2026-04-28
 
 ## Archive note
-Previous iteration tasks are archived in `TASKS.md` under **Archived (Completed in previous iteration)** and are not being repeated.
+The previous iteration (2026-04-27) is archived in `TASKS.md` and will not be repeated.
 
 ## Execution Log (Current iteration)
 
-- [x] Replaced active task list with current-iteration scope in `TASKS.md`.
-- [x] Redesigned Prisma model for day/week nesting with `WeekPlanDay` and time-only day item planning.
-- [x] Implemented plan service changes for:
-  - day plan time sorting
-  - week plan day-slot composition
-  - attach existing day plans / inline day plans
-  - add activity to day plan API flow
-  - ownership/admin access checks
-- [x] Updated plan APIs and plan UI pages/forms for new model and flows.
-- [x] Added “Add to day plan” in activity detail and activity catalog card.
-- [x] Improved plans list UX (type/search/pagination/metadata).
-- [x] Added profile list-size pagination behavior (5/10/15).
-- [x] Added author bio display/tooltip behavior on activity views.
-- [x] Hardened forgot-password response and updated README docs.
-- [x] Updated seed data to include multiple day plans and 2 week plans with nested structure.
-- [x] Added/updated tests for plan creation, add-to-day-plan, sorting, and permission denial path.
-- [ ] Final verification audit (lint/build/tests) and release notes.
+- [x] Replaced active tasks in `TASKS.md` with the new inline-week-plan-only scope.
+- [x] Removed week-plan date dependency from validators, service logic, UI summaries, and seed usage.
+- [x] Updated inline day blocks to remove custom title/date inputs.
+- [x] Added multi-activity inline rows with optional time/notes and row removal.
+- [x] Fixed inline payload shape for create/update and edit-form rehydration.
+- [x] Preserved sort behavior: timed entries first, untimed at the end.
+- [x] Added/updated validation and helper text for required activity content fields.
+- [x] Added tests for week inline creation with multiple activities across days.
+- [ ] Run verification commands (tests/lint) and finalize handoff notes.
 
-## Notes / limitations to track
-- Week-plan compatibility migration converts old week-plan items into inline day plans (one migrated day per legacy item).
-- Week-plan inline day editor is MVP-focused (minimal controls).
+## Notes
+- Inline day plans are persisted as underlying `Plan(type=day)` records linked through `WeekPlanDay.inlineDayPlanId`.
+- Inline day plan titles are generated automatically as `Day {N}`.

@@ -8,8 +8,6 @@ export const dayPlanItemSchema = z.object({
 });
 
 const createInlineDaySchema = z.object({
-  title: z.string().trim().min(2).max(120),
-  date: z.string().date(),
   items: z.array(dayPlanItemSchema).min(1)
 });
 
@@ -26,7 +24,7 @@ export const planSchema = z
     type: z.enum(["day", "week"]),
     title: z.string().trim().min(2).max(120),
     date: z.string().date().optional().nullable(),
-    weekStartDate: z.string().date().optional().nullable(),
+    workingDays: z.number().int().min(2).max(6).optional(),
     items: z.array(dayPlanItemSchema).optional(),
     weekDays: z.array(weekDaySchema).optional()
   })
@@ -38,12 +36,12 @@ export const planSchema = z
     message: "Day plans require at least one activity.",
     path: ["items"]
   })
-  .refine((value) => (value.type === "week" ? Boolean(value.weekStartDate) : true), {
-    message: "Week plans require a week start date.",
-    path: ["weekStartDate"]
+  .refine((value) => (value.type === "week" ? Boolean(value.workingDays) : true), {
+    message: "Week plans require a working days count.",
+    path: ["workingDays"]
   })
-  .refine((value) => (value.type === "week" ? (value.weekDays?.length ?? 0) >= 2 : true), {
-    message: "Week plans require at least 2 working days.",
+  .refine((value) => (value.type === "week" ? (value.weekDays?.length ?? 0) === value.workingDays : true), {
+    message: "Week plans must provide day entries for each working day.",
     path: ["weekDays"]
   });
 

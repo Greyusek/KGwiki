@@ -142,8 +142,8 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
   return (
     <form onSubmit={onSubmit} className="space-y-4 rounded-lg border bg-background p-4 sm:p-6">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Title" required>
-          <input className="w-full rounded-md border px-3 py-2 text-sm" value={values.title} onChange={(event) => setValues((prev) => ({ ...prev, title: event.target.value }))} required />
+        <Field label="Title" required helpText="At least 3 characters. Use a clear teacher-facing name.">
+          <input className="w-full rounded-md border px-3 py-2 text-sm" minLength={3} value={values.title} onChange={(event) => setValues((prev) => ({ ...prev, title: event.target.value }))} required />
         </Field>
         <Field label="Age group" required helpText="Choose the primary developmental age this activity targets.">
           <select className="w-full rounded-md border px-3 py-2 text-sm" value={values.ageGroup} onChange={(event) => setValues((prev) => ({ ...prev, ageGroup: event.target.value }))} required>
@@ -153,8 +153,8 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
         </Field>
       </div>
 
-      <Field label="Summary" required helpText="1-2 sentences to help teachers quickly understand the activity.">
-        <textarea className="min-h-20 w-full rounded-md border px-3 py-2 text-sm" value={values.summary} onChange={(event) => setValues((prev) => ({ ...prev, summary: event.target.value }))} required />
+      <Field label="Summary" required helpText="At least 10 characters. 1-2 sentences to help teachers quickly understand the activity.">
+        <textarea className="min-h-20 w-full rounded-md border px-3 py-2 text-sm" minLength={10} value={values.summary} onChange={(event) => setValues((prev) => ({ ...prev, summary: event.target.value }))} required />
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -184,12 +184,12 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
         </Field>
       </div>
 
-      <Field label="Learning goal" required helpText="Main learning outcome children should achieve.">
-        <textarea className="min-h-20 w-full rounded-md border px-3 py-2 text-sm" value={values.goal} onChange={(event) => setValues((prev) => ({ ...prev, goal: event.target.value }))} required />
+      <Field label="Learning goal" required helpText="At least 10 characters. Main learning outcome children should achieve.">
+        <textarea className="min-h-20 w-full rounded-md border px-3 py-2 text-sm" minLength={10} value={values.goal} onChange={(event) => setValues((prev) => ({ ...prev, goal: event.target.value }))} required />
       </Field>
 
-      <Field label="Context and setup" required helpText="Describe setup, class context, and how to prepare before starting.">
-        <textarea className="min-h-24 w-full rounded-md border px-3 py-2 text-sm" value={values.description} onChange={(event) => setValues((prev) => ({ ...prev, description: event.target.value }))} required />
+      <Field label="Context and setup" required helpText="At least 20 characters. Describe setup, class context, and how to prepare before starting.">
+        <textarea className="min-h-24 w-full rounded-md border px-3 py-2 text-sm" minLength={20} value={values.description} onChange={(event) => setValues((prev) => ({ ...prev, description: event.target.value }))} required />
       </Field>
 
       <Field label="Specific objectives (one per line)" helpText="Break the learning goal into measurable child outcomes.">
