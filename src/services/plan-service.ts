@@ -159,9 +159,11 @@ export async function createPlan(input: PlanInput, user: SessionUser) {
   }
 
   const weekDays = input.weekDays ?? [];
-  const attachedIds = weekDays
-    .map((day) => day.attachedDayPlanId)
-    .filter((value): value is string => Boolean(value));
+  const attachedIds = Array.from(new Set(
+    weekDays
+      .map((day) => day.attachedDayPlanId)
+      .filter((value): value is string => Boolean(value))
+  ));
 
   if (attachedIds.length) {
     const uniqueAttachedIds = [...new Set(attachedIds)];
@@ -197,9 +199,11 @@ export async function updatePlan(id: string, input: PlanInput, user: SessionUser
   if (!existing) return { ok: false as const, status: 404, error: "Plan not found." };
 
   if (input.type === "week") {
-    const attachedIds = (input.weekDays ?? [])
-      .map((day) => day.attachedDayPlanId)
-      .filter((value): value is string => Boolean(value));
+    const attachedIds = Array.from(new Set(
+      (input.weekDays ?? [])
+        .map((day) => day.attachedDayPlanId)
+        .filter((value): value is string => Boolean(value))
+    ));
 
     if (attachedIds.length) {
       const uniqueAttachedIds = [...new Set(attachedIds)];
