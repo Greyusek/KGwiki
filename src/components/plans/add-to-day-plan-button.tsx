@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
-type DayPlanOption = { id: string; title: string; date: string | null };
+type DayPlanOption = { id: string; title: string };
 
 export function AddToDayPlanButton({ activityId, className }: { activityId: string; className?: string }) {
   const [open, setOpen] = useState(false);

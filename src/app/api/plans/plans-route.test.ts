@@ -16,7 +16,6 @@ describe("plans routes", () => {
       body: JSON.stringify({
         type: "day",
         title: "Day A",
-        date: "2026-04-27",
         items: [{ activityId: "a1", orderIndex: 0, plannedTime: "09:30" }]
       })
     }));
@@ -98,13 +97,43 @@ describe("plans routes", () => {
       body: JSON.stringify({
         type: "day",
         title: "Day A",
-        date: "2026-04-27",
         items: [{ activityId: "a1", orderIndex: 0, plannedTime: "09:30" }]
       })
     }), { params: Promise.resolve({ id: "p1" }) });
 
     expect(response.status).toBe(404);
     expect(updatePlan).toHaveBeenCalledTimes(1);
+  });
+
+  it("creates week plan with mixed inline and attached days", async () => {
+    const createPlan = vi.fn(async () => ({ id: "week-mixed-1" }));
+    vi.doMock("@/lib/auth", () => ({ auth: async () => ({ user: { id: "u1", role: "user" } }) }));
+    vi.doMock("@/services/plan-service", () => ({ createPlan, listPlans: vi.fn(async () => ({ items: [], total: 0, page: 1, pageSize: 10 })) }));
+
+    const { POST } = await import("./route");
+    const response = await POST(new Request("http://localhost/api/plans", {
+      method: "POST",
+      body: JSON.stringify({
+        type: "week",
+        title: "Week Mixed",
+        workingDays: 2,
+        weekDays: [
+          {
+            dayIndex: 0,
+            inlineDayPlan: {
+              items: [
+                { activityId: "a1", orderIndex: 0, plannedTime: "09:00", notes: null },
+                { activityId: "a2", orderIndex: 1, plannedTime: "11:00", notes: null }
+              ]
+            }
+          },
+          { dayIndex: 1, attachedDayPlanId: "day-a" }
+        ]
+      })
+    }));
+
+    expect(response.status).toBe(201);
+    expect(createPlan).toHaveBeenCalledTimes(1);
   });
 
   it("adds public activity to day plan", async () => {
