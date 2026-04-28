@@ -4,13 +4,22 @@ import { auth } from "@/lib/auth";
 import { planSchema } from "@/lib/validators/plan";
 import { createPlan, listPlans } from "@/services/plan-service";
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user?.id || !session.user.role) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const plans = await listPlans({ id: session.user.id, role: session.user.role });
+  const { searchParams } = new URL(request.url);
+  const type = searchParams.get("type");
+  const q = searchParams.get("q") ?? undefined;
+  const page = Number(searchParams.get("page") ?? "1");
+  const pageSize = Number(searchParams.get("pageSize") ?? "10");
+
+  const plans = await listPlans(
+    { id: session.user.id, role: session.user.role },
+    { type: type === "day" || type === "week" ? type : undefined, q, page, pageSize }
+  );
   return NextResponse.json({ data: plans });
 }
 

@@ -3,14 +3,10 @@ import { notFound, redirect } from "next/navigation";
 import { PlanForm } from "@/components/plans/plan-form";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getPlanById } from "@/services/plan-service";
+import { getPlanById, listDayPlansForUser } from "@/services/plan-service";
 
 function toDateInput(value: Date | null) {
   return value ? value.toISOString().slice(0, 10) : "";
-}
-
-function toDateTimeInput(value: Date | null) {
-  return value ? value.toISOString().slice(0, 16) : "";
 }
 
 export default async function EditPlanPage({ params }: { params: Promise<{ id: string }> }) {
@@ -24,13 +20,11 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
   if (!plan) notFound();
 
   const activities = await prisma.activity.findMany({
-    where:
-      session.user.role === "admin"
-        ? {}
-        : { OR: [{ authorId: session.user.id }, { isPublic: true }] },
+    where: session.user.role === "admin" ? {} : { OR: [{ authorId: session.user.id }, { isPublic: true }] },
     select: { id: true, title: true },
     orderBy: { title: "asc" }
   });
+  const dayPlans = await listDayPlansForUser({ id: session.user.id, role: session.user.role });
 
   return (
     <section className="space-y-3">
@@ -38,6 +32,7 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
       <PlanForm
         planId={plan.id}
         activities={activities}
+        dayPlans={dayPlans.map((entry) => ({ id: entry.id, title: entry.title, date: entry.date?.toISOString() ?? "" }))}
         initial={{
           type: plan.type,
           title: plan.title,
@@ -45,9 +40,20 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
           weekStartDate: toDateInput(plan.weekStartDate),
           items: plan.items.map((item) => ({
             activityId: item.activityId,
-            orderIndex: item.orderIndex,
             notes: item.notes ?? "",
-            plannedTime: toDateTimeInput(item.plannedTime)
+            plannedTime: item.plannedTime ?? ""
+          })),
+          weekDays: plan.weekDays.map((day, index) => ({
+            dayIndex: index,
+            mode: day.attachedDayPlanId ? "attach" : "inline",
+            attachedDayPlanId: day.attachedDayPlanId ?? dayPlans[0]?.id ?? "",
+            inlineTitle: day.inlineDayPlan?.title ?? `Day ${index + 1}`,
+            inlineDate: toDateInput(day.inlineDayPlan?.date ?? null),
+            inlineItems: (day.inlineDayPlan?.items ?? [{ activityId: activities[0]?.id ?? "", plannedTime: null, notes: null, orderIndex: 0 }]).map((item) => ({
+              activityId: item.activityId,
+              plannedTime: item.plannedTime ?? "",
+              notes: item.notes ?? ""
+            }))
           }))
         }}
       />

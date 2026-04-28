@@ -165,3 +165,15 @@ After seed runs:
 
 Password for all demo users:
 - `ChangeMe123!`
+
+---
+
+
+### Password reset MVP behavior
+
+The forgot-password endpoint always returns a generic success message to avoid account enumeration:
+
+`If an account with this email exists, reset instructions have been generated.`
+
+In non-production environments, the generated reset link is logged to the server console for local testing.
+

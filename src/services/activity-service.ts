@@ -28,7 +28,7 @@ export async function listPublicActivities() {
     where: { isPublic: true },
     include: {
       author: {
-        select: { id: true, name: true, avatar: true }
+        select: { id: true, name: true, avatar: true, bio: true }
       }
     },
     orderBy: { updatedAt: "desc" }
@@ -75,7 +75,7 @@ export async function listActivitiesWithFilters(query: ActivityListQuery) {
   const [items, total] = await Promise.all([
     prisma.activity.findMany({
       where,
-      include: { author: { select: { id: true, name: true, avatar: true } } },
+      include: { author: { select: { id: true, name: true, avatar: true, bio: true } } },
       orderBy: { updatedAt: "desc" },
       skip: (query.page - 1) * query.pageSize,
       take: query.pageSize
@@ -90,7 +90,7 @@ export async function listUserActivities(userId: string) {
     where: { authorId: userId },
     include: {
       author: {
-        select: { id: true, name: true, avatar: true }
+        select: { id: true, name: true, avatar: true, bio: true }
       }
     },
     orderBy: { updatedAt: "desc" }
@@ -102,7 +102,7 @@ export async function getActivityById(activityId: string, userId?: string) {
     where: { id: activityId },
     include: {
       author: {
-        select: { id: true, name: true, avatar: true }
+        select: { id: true, name: true, avatar: true, bio: true }
       },
       sourceActivity: {
         select: {

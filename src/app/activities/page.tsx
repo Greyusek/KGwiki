@@ -1,3 +1,4 @@
+import { auth } from "@/lib/auth";
 
 import { ActivityCard } from "@/components/activities/activity-card";
 import {
@@ -17,6 +18,7 @@ export default async function ActivitiesPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
+  const session = await auth();
   const params = await searchParams;
   const page = Math.max(Number(params.page ?? "1") || 1, 1);
   const pageSize = PAGE_SIZE_OPTIONS.includes(Number(params.pageSize) as 10 | 20 | 30)
@@ -67,7 +69,7 @@ export default async function ActivitiesPage({
       ) : (
         <div className="grid gap-4">
           {activities.map((activity: (typeof activities)[number]) => (
-            <ActivityCard key={activity.id} activity={activity} />
+            <ActivityCard key={activity.id} activity={activity} canAddToPlan={Boolean(session?.user?.id)} />
           ))}
         </div>
       )}

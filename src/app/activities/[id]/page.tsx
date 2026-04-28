@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { DeleteActivityButton } from "@/components/activities/delete-activity-button";
 import { Button } from "@/components/ui/button";
 import { ActivitySocialPanel } from "@/components/activities/activity-social-panel";
+import { AddToDayPlanButton } from "@/components/plans/add-to-day-plan-button";
 import { auth } from "@/lib/auth";
 import { canManageActivity, getActivityById } from "@/services/activity-service";
 
@@ -54,14 +55,17 @@ export default async function ActivityDetailsPage({ params }: { params: Promise<
           <h1 className="text-2xl font-semibold">{activity.title}</h1>
           <p className="text-muted-foreground">{activity.summary}</p>
         </div>
-        {canEdit ? (
-          <div className="flex gap-2">
-            <Button asChild variant="outline">
-              <Link href={`/activities/${activity.id}/edit`}>Edit</Link>
-            </Button>
-            <DeleteActivityButton activityId={activity.id} />
-          </div>
-        ) : null}
+        <div className="flex gap-2">
+          {sessionUser ? <AddToDayPlanButton activityId={activity.id} /> : null}
+          {canEdit ? (
+            <>
+              <Button asChild variant="outline">
+                <Link href={`/activities/${activity.id}/edit`}>Edit</Link>
+              </Button>
+              <DeleteActivityButton activityId={activity.id} />
+            </>
+          ) : null}
+        </div>
       </div>
 
       <div className="grid gap-4 rounded-lg border bg-background p-4 sm:grid-cols-2">
@@ -73,6 +77,7 @@ export default async function ActivityDetailsPage({ params }: { params: Promise<
         <Meta label="Location type" value={activity.locationType} />
         <Meta label="Complexity" value={activity.complexityLevel} />
         <Meta label="Author" value={activity.author.name} />
+        <Meta label="Author bio" value={activity.author.bio ?? "Bio not provided"} />
         <Meta label="Visibility" value={activity.isPublic ? "Public" : "Private"} />
         <Meta label="Created" value={activity.createdAt.toLocaleString()} />
         <Meta label="Updated" value={activity.updatedAt.toLocaleString()} />
