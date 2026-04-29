@@ -18,6 +18,7 @@ type WeekDayInput = {
   dayIndex: number;
   mode: "attach" | "inline";
   attachedDayPlanId: string;
+  inlineTitle: string;
   inlineItems: PlanItemInput[];
 };
 
@@ -30,6 +31,7 @@ function createDefaultWeekDay(dayIndex: number, dayPlans: DayPlanOption[], activ
     dayIndex,
     mode: "attach",
     attachedDayPlanId: dayPlans[0]?.id ?? "",
+    inlineTitle: "",
     inlineItems: [createEmptyPlanItem(activities)]
   };
 }
@@ -60,9 +62,10 @@ export function PlanForm({
     initial?.items.length ? initial.items : [createEmptyPlanItem(activities)]
   );
   const [workingDays, setWorkingDays] = useState<number>(initial?.workingDays ?? 5);
+  const [availableDayPlans, setAvailableDayPlans] = useState<DayPlanOption[]>(dayPlans);
   const [weekDays, setWeekDays] = useState<WeekDayInput[]>(
     initial?.weekDays.length
-      ? initial.weekDays
+      ? initial.weekDays.map((entry) => ({ ...entry, inlineTitle: entry.inlineTitle ?? "" }))
       : Array.from({ length: 5 }, (_, index) => createDefaultWeekDay(index, dayPlans, activities))
   );
 
@@ -93,9 +96,25 @@ export function PlanForm({
     setWeekDays((prev) => {
       const existingByDay = new Map(prev.map((day) => [day.dayIndex, day]));
       return Array.from({ length: Math.max(value, prev.length) }, (_, index) => {
-        return existingByDay.get(index) ?? createDefaultWeekDay(index, dayPlans, activities);
+        return existingByDay.get(index) ?? createDefaultWeekDay(index, availableDayPlans, activities);
       });
     });
+  }
+
+
+  async function saveInlineDay(day: WeekDayInput) {
+    const titleValue = day.inlineTitle.trim();
+    if (!titleValue) { setError("Day plan title is required."); return; }
+    if (day.inlineItems.length < 1) { setError("Add at least one activity before saving as day plan."); return; }
+    setBusy(true); setError(null);
+    try {
+      const response = await fetch("/api/plans/day-plans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: titleValue, items: day.inlineItems.map((item, index) => ({ activityId: item.activityId, orderIndex: index, notes: item.notes || null, plannedTime: item.plannedTime || null })) }) });
+      const data = await response.json() as { error?: string; data?: DayPlanOption };
+      if (!response.ok || !data.data) { setError(data.error ?? "Failed to save inline day plan."); return; }
+      setAvailableDayPlans((prev) => [data.data!, ...prev.filter((plan) => plan.id !== data.data!.id)]);
+      setWeekDays((prev) => prev.map((entry) => entry.dayIndex !== day.dayIndex ? entry : { ...entry, mode: "attach", attachedDayPlanId: data.data!.id, inlineTitle: "", inlineItems: [createEmptyPlanItem(activities)] }));
+    } catch { setError("Request failed. Please try again."); }
+    finally { setBusy(false); }
   }
 
   async function onSubmit(event: FormEvent) {
@@ -226,10 +245,12 @@ export function PlanForm({
                 </label>
                 {day.mode === "attach" ? (
                   <select className="w-full rounded border px-2 py-1 text-sm" value={day.attachedDayPlanId} onChange={(event) => updateWeekDay(day.dayIndex, { attachedDayPlanId: event.target.value })}>
-                    {dayPlans.map((plan) => <option key={plan.id} value={plan.id}>{plan.title}</option>)}
+                    {availableDayPlans.map((plan) => <option key={plan.id} value={plan.id}>{plan.title}</option>)}
                   </select>
                 ) : (
                   <div className="space-y-2">
+                    <label className="space-y-1 text-sm"><span className="font-medium">Day plan title</span><input className="w-full rounded border px-2 py-1" placeholder="Например: День про осень и наблюдения" value={day.inlineTitle} onChange={(event) => updateWeekDay(day.dayIndex, { inlineTitle: event.target.value })} /></label>
+                    <Button type="button" variant="outline" disabled={busy || !day.inlineTitle.trim() || day.inlineItems.length < 1} onClick={() => saveInlineDay(day)}>Save as Day Plan</Button>
                     {day.inlineItems.map((item, itemIndex) => (
                       <div key={itemIndex} className="grid gap-2 rounded border p-2 sm:grid-cols-2">
                         <label className="space-y-1 text-sm sm:col-span-2">
