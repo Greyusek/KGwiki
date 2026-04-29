@@ -177,3 +177,14 @@ The forgot-password endpoint always returns a generic success message to avoid a
 
 In non-production environments, the generated reset link is logged to the server console for local testing.
 
+
+## Rich Materials (MVP v1.1)
+- Supported media types: image, video, audio, document, external_link.
+- Upload MIME support:
+  - Images: jpeg/png/webp/gif (20MB)
+  - Video: mp4/webm/quicktime (1GB)
+  - Audio: mpeg/mp3/wav/ogg/webm/mp4 (200MB)
+  - Documents: pdf/txt/doc/docx/xls/xlsx/ppt/pptx (100MB)
+- External links: add http/https links (Dropbox, Yandex Disk, Google Drive, OneDrive, generic).
+- Known limitations: no resumable/chunked uploads yet; media route does not implement HTTP range responses for advanced seeking.
+

@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { MaterialGallery } from "@/components/activities/material-gallery";
 
-type MediaItem = { id: string; fileName: string; url: string; type: "image" | "video" | "document" };
+type MediaItem = { id: string; fileName: string; url: string; type: "image" | "video" | "audio" | "document" | "external_link"; mimeType?: string | null; fileSize?: number | null; title?: string | null; description?: string | null; externalUrl?: string | null };
 
 type Props = {
   activity: {
@@ -75,36 +75,15 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
     <section className="space-y-6">
       <section className="space-y-3 rounded-lg border bg-background p-4">
         <h2 className="text-lg font-semibold">Activity media</h2>
-        <ul className="space-y-3">
-          {activity.media.map((media) => (
-            <li key={media.id} className="rounded-md border p-3 text-sm">
-              {media.type === "image" ? (
-                <Image src={media.url} alt={media.fileName} width={320} height={200} className="mb-2 h-auto rounded-md object-cover" />
-              ) : null}
-              <a href={media.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
-                {media.fileName}
-              </a>
-              {currentUser && (currentUser.id === activity.authorId || currentUser.role === "admin") ? (
-                <button
-                  className="ml-2 text-xs text-red-600 hover:underline"
-                  onClick={() =>
-                    runAction(`activity-media-delete-${media.id}`, async () => {
-                      const response = await fetch(`/api/activities/${activity.id}/media/${media.id}`, { method: "DELETE" });
+        <MaterialGallery items={activity.media} onDelete={currentUser && (currentUser.id === activity.authorId || currentUser.role === "admin") ? (mediaId) => runAction(`activity-media-delete-${mediaId}`, async () => {
+                      const response = await fetch(`/api/activities/${activity.id}/media/${mediaId}`, { method: "DELETE" });
                       const data = (await response.json()) as { error?: string };
-                      if (!response.ok) {
-                        throw new Error(data.error ?? "Delete failed.");
-                      }
-                    })
-                  }
-                >
-                  Delete
-                </button>
-              ) : null}
-            </li>
-          ))}
-        </ul>
+                      if (!response.ok) throw new Error(data.error ?? "Delete failed.");
+                    }) : undefined} />
 
         {currentUser && (currentUser.id === activity.authorId || currentUser.role === "admin") ? (
+          <>
+          <div className="space-y-2">
           <form
             onSubmit={(event) => {
               event.preventDefault();
@@ -132,6 +111,9 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
               Upload file
             </Button>
           </form>
+          <form className="mt-2 space-y-2" onSubmit={(event)=>{event.preventDefault(); const formData=new FormData(event.currentTarget); runAction("activity-media-link", async()=>{await submitJson(`/api/activities/${activity.id}/media`,"POST",{title:String(formData.get("title")||""), externalUrl:String(formData.get("externalUrl")||""), description:String(formData.get("description")||"")}); (event.currentTarget as HTMLFormElement).reset();});}}><input name="title" placeholder="Link title" className="w-full rounded-md border px-2 py-1 text-sm" required/><input name="externalUrl" placeholder="https://..." className="w-full rounded-md border px-2 py-1 text-sm" required/><input name="description" placeholder="Description (optional)" className="w-full rounded-md border px-2 py-1 text-sm"/><Button size="sm" type="submit">Add external link</Button></form>
+          </div>
+          </>
         ) : null}
       </section>
 
@@ -259,6 +241,7 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
               {busy === "comment" ? "Posting..." : "Add comment"}
             </Button>
           </form>
+          </>
         ) : null}
       </section>
 
@@ -276,36 +259,11 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
                 <p>
                   <span className="font-medium">What to improve:</span> {entry.whatToImprove}
                 </p>
-                {!!entry.media.length && (
-                  <ul className="space-y-2 pl-1">
-                    {entry.media.map((media) => (
-                      <li key={media.id}>
-                        {media.type === "image" ? (
-                          <Image src={media.url} alt={media.fileName} width={280} height={180} className="mb-1 h-auto rounded-md object-cover" />
-                        ) : null}
-                        <a href={media.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
-                          {media.fileName}
-                        </a>
-                        {canManage ? (
-                          <button
-                            className="ml-2 text-xs text-red-600 hover:underline"
-                            onClick={() =>
-                              runAction(`feedback-media-delete-${media.id}`, async () => {
-                                const response = await fetch(`/api/feedback/${entry.id}/media/${media.id}`, { method: "DELETE" });
+                {!!entry.media.length && (<MaterialGallery items={entry.media} onDelete={canManage ? (mediaId) => runAction(`feedback-media-delete-${mediaId}`, async () => {
+                                const response = await fetch(`/api/feedback/${entry.id}/media/${mediaId}`, { method: "DELETE" });
                                 const data = (await response.json()) as { error?: string };
-                                if (!response.ok) {
-                                  throw new Error(data.error ?? "Delete failed.");
-                                }
-                              })
-                            }
-                          >
-                            Delete
-                          </button>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                                if (!response.ok) throw new Error(data.error ?? "Delete failed.");
+                              }) : undefined} />)}                )}
                 <p className="text-xs text-muted-foreground">
                   {entry.author.name} · {new Date(entry.createdAt).toLocaleString()}
                 </p>
@@ -339,6 +297,7 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
                         Upload file
                       </Button>
                     </form>
+                    <form className="space-y-2" onSubmit={(event)=>{event.preventDefault(); const formData=new FormData(event.currentTarget); runAction(`media-link-${entry.id}`, async()=>{await submitJson(`/api/feedback/${entry.id}/media`,"POST",{title:String(formData.get("title")||""), externalUrl:String(formData.get("externalUrl")||""), description:String(formData.get("description")||"")}); (event.currentTarget as HTMLFormElement).reset();});}}><input name="title" placeholder="Link title" className="w-full rounded-md border px-2 py-1 text-xs" required/><input name="externalUrl" placeholder="https://..." className="w-full rounded-md border px-2 py-1 text-xs" required/><input name="description" placeholder="Description (optional)" className="w-full rounded-md border px-2 py-1 text-xs"/><Button size="sm" type="submit">Add link</Button></form>
                     <button
                       className="text-xs text-red-600 hover:underline"
                       onClick={() =>
@@ -378,6 +337,7 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
               {busy === "feedback" ? "Saving..." : "Add feedback"}
             </Button>
           </form>
+          </>
         ) : null}
       </section>
 

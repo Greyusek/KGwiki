@@ -28,10 +28,13 @@ export async function GET(
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   }
 
+  const contentType = stat.metaData["content-type"] ?? "application/octet-stream";
+  const isInline = contentType.startsWith("image/") || contentType.startsWith("video/") || contentType.startsWith("audio/") || contentType === "application/pdf" || contentType.startsWith("text/");
   return new NextResponse(Buffer.concat(chunks), {
     headers: {
-      "Content-Type": stat.metaData["content-type"] ?? "application/octet-stream",
+      "Content-Type": contentType,
       "Content-Length": String(stat.size),
+      "Content-Disposition": `${isInline ? "inline" : "attachment"}; filename=\"${encodeURIComponent(objectPath[objectPath.length - 1])}\"`,
       "Cache-Control": "public, max-age=31536000, immutable"
     }
   });
