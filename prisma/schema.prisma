@@ -15,7 +15,9 @@ enum Role {
 enum ActivityMediaType {
   image
   video
+  audio
   document
+  external_link
 }
 
 enum PlanType {
@@ -89,6 +91,11 @@ model ActivityMedia {
   type       ActivityMediaType
   url        String
   fileName   String
+  mimeType   String?
+  fileSize   Int?
+  title      String?
+  description String?
+  externalUrl String?
   createdAt  DateTime         @default(now())
 
   activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
@@ -133,6 +140,11 @@ model FeedbackMedia {
   type            ActivityMediaType
   url             String
   fileName        String
+  mimeType        String?
+  fileSize        Int?
+  title           String?
+  description     String?
+  externalUrl     String?
   createdAt       DateTime         @default(now())
 
   feedbackEntry FeedbackEntry @relation(fields: [feedbackEntryId], references: [id], onDelete: Cascade)

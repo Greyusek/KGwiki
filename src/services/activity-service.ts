@@ -1,4 +1,3 @@
-import { ActivityMediaType } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 
 import { minioObjectUrl } from "@/lib/minio";
@@ -6,6 +5,7 @@ import { minioObjectPathFromUrl } from "@/lib/media";
 import { getMinioClient, minioBucket } from "@/lib/minio";
 import { prisma } from "@/lib/prisma";
 import { ActivityInput, ActivityUpdateInput } from "@/lib/validators/activity";
+import { detectLinkProvider } from "@/lib/materials";
 
 type SessionUser = {
   id: string;
@@ -192,15 +192,10 @@ export async function deleteActivity(activityId: string, user: SessionUser) {
   return { ok: true as const };
 }
 
-function mediaTypeFromMime(mimeType: string): ActivityMediaType {
-  if (mimeType.startsWith("image/")) return "image";
-  if (mimeType.startsWith("video/")) return "video";
-  return "document";
-}
 
 export async function addActivityMedia(
   activityId: string,
-  file: { fileName: string; objectPath: string; mimeType: string },
+  file: { fileName: string; objectPath: string; mimeType: string; fileSize: number },
   user: SessionUser
 ) {
   const activity = await prisma.activity.findUnique({
@@ -221,7 +216,10 @@ export async function addActivityMedia(
       activityId,
       fileName: file.fileName,
       url: minioObjectUrl(file.objectPath),
-      type: mediaTypeFromMime(file.mimeType)
+      type: file.mimeType.startsWith("image/") ? "image" : file.mimeType.startsWith("video/") ? "video" : file.mimeType.startsWith("audio/") ? "audio" : "document",
+      mimeType: file.mimeType,
+      fileSize: file.fileSize,
+      title: file.fileName
     }
   });
 
@@ -250,4 +248,24 @@ export async function removeActivityMedia(activityId: string, mediaId: string, u
   await prisma.activityMedia.delete({ where: { id: media.id } });
 
   return { ok: true as const };
+}
+
+export async function addActivityExternalLink(activityId: string, input: { title: string; externalUrl: string; description?: string }, user: SessionUser) {
+  const activity = await prisma.activity.findUnique({ where: { id: activityId }, select: { authorId: true } });
+  if (!activity) return { ok: false as const, status: 404, error: "Activity not found." };
+  if (!canManageActivity(user, activity)) return { ok: false as const, status: 403, error: "You do not have permission to add links for this activity." };
+
+  const media = await prisma.activityMedia.create({
+    data: {
+      activityId,
+      type: "external_link",
+      fileName: input.title,
+      title: input.title,
+      description: input.description || null,
+      externalUrl: input.externalUrl,
+      url: input.externalUrl
+    }
+  });
+
+  return { ok: true as const, media: { ...media, provider: detectLinkProvider(input.externalUrl) } };
 }

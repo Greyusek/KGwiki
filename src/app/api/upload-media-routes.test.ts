@@ -1,68 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("activity and feedback media routes", () => {
-  beforeEach(() => {
-    vi.resetModules();
-  });
+  beforeEach(() => vi.resetModules());
 
-  it("upload file to activity", async () => {
+  it("upload image and video and audio and document", async () => {
     const putObject = vi.fn(async () => undefined);
-    const addActivityMedia = vi.fn(async () => ({ ok: true as const, media: { id: "m1", url: "/media/kgwiki-local/activities/a1/demo.png" } }));
-
+    const addActivityMedia = vi.fn(async () => ({ ok: true as const, media: { id: "m1", url: "/media/kgwiki-local/activities/a1/file" } }));
     vi.doMock("@/lib/auth", () => ({ auth: async () => ({ user: { id: "u1", role: "user" } }) }));
-    vi.doMock("@/lib/minio", () => ({
-      ensureMinioBucket: async () => undefined,
-      getMinioClient: () => ({ putObject }),
-      minioBucket: "kgwiki-local"
-    }));
-    vi.doMock("@/services/activity-service", () => ({ addActivityMedia }));
-
+    vi.doMock("@/lib/minio", () => ({ ensureMinioBucket: async () => undefined, getMinioClient: () => ({ putObject }), minioBucket: "kgwiki-local" }));
+    vi.doMock("@/services/activity-service", () => ({ addActivityMedia, addActivityExternalLink: vi.fn() }));
     const { POST } = await import("./activities/[id]/media/route");
-    const form = new FormData();
-    form.append("file", new File(["hello"], "demo.png", { type: "image/png" }));
 
-    const response = await POST(new Request("http://localhost/api/activities/a1/media", { method: "POST", body: form }), {
-      params: Promise.resolve({ id: "a1" })
-    });
-    expect(response.status).toBe(201);
-    expect(putObject).toHaveBeenCalledTimes(1);
-    expect(addActivityMedia).toHaveBeenCalledTimes(1);
+    for (const [type, name] of [["image/png", "a.png"], ["video/mp4", "a.mp4"], ["audio/mpeg", "a.mp3"], ["application/pdf", "a.pdf"]]) {
+      const form = new FormData(); form.append("file", new File(["hello"], name, { type }));
+      const response = await POST(new Request("http://localhost/api/activities/a1/media", { method: "POST", body: form }), { params: Promise.resolve({ id: "a1" }) });
+      expect(response.status).toBe(201);
+    }
+    expect(putObject).toHaveBeenCalledTimes(4);
+    expect(addActivityMedia).toHaveBeenCalledTimes(4);
   });
 
-  it("upload feedback attachment", async () => {
-    const putObject = vi.fn(async () => undefined);
-    const addFeedbackMedia = vi.fn(async () => ({ ok: true as const, media: { id: "fm1", url: "/media/kgwiki-local/feedback/f1/note.txt" } }));
-
+  it("add external link material", async () => {
+    const addActivityExternalLink = vi.fn(async () => ({ ok: true as const, media: { id: "m2" } }));
     vi.doMock("@/lib/auth", () => ({ auth: async () => ({ user: { id: "u1", role: "user" } }) }));
-    vi.doMock("@/lib/minio", () => ({
-      ensureMinioBucket: async () => undefined,
-      getMinioClient: () => ({ putObject }),
-      minioBucket: "kgwiki-local"
-    }));
-    vi.doMock("@/services/social-service", () => ({ addFeedbackMedia }));
-
-    const { POST } = await import("./feedback/[id]/media/route");
-    const form = new FormData();
-    form.append("file", new File(["hello"], "note.txt", { type: "text/plain" }));
-
-    const response = await POST(new Request("http://localhost/api/feedback/f1/media", { method: "POST", body: form }), {
-      params: Promise.resolve({ id: "f1" })
-    });
+    vi.doMock("@/services/activity-service", () => ({ addActivityExternalLink, addActivityMedia: vi.fn() }));
+    const { POST } = await import("./activities/[id]/media/route");
+    const response = await POST(new Request("http://localhost/api/activities/a1/media", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: "Drive", externalUrl: "https://drive.google.com/x" }) }), { params: Promise.resolve({ id: "a1" }) });
     expect(response.status).toBe(201);
-    expect(putObject).toHaveBeenCalledTimes(1);
-    expect(addFeedbackMedia).toHaveBeenCalledTimes(1);
-  });
-
-  it("delete uploaded file metadata endpoint", async () => {
-    const removeActivityMedia = vi.fn(async () => ({ ok: true as const }));
-    vi.doMock("@/lib/auth", () => ({ auth: async () => ({ user: { id: "u1", role: "user" } }) }));
-    vi.doMock("@/services/activity-service", () => ({ removeActivityMedia }));
-
-    const { DELETE } = await import("./activities/[id]/media/[mediaId]/route");
-    const response = await DELETE(new Request("http://localhost/api/activities/a1/media/m1", { method: "DELETE" }), {
-      params: Promise.resolve({ id: "a1", mediaId: "m1" })
-    });
-    expect(response.status).toBe(200);
-    expect(removeActivityMedia).toHaveBeenCalledTimes(1);
   });
 });

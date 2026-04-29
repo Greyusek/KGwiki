@@ -5,6 +5,7 @@ import { minioObjectUrl } from "@/lib/minio";
 import { minioObjectPathFromUrl } from "@/lib/media";
 import { getMinioClient, minioBucket } from "@/lib/minio";
 import { CommentInput, FeedbackInput, RatingInput } from "@/lib/validators/social";
+import { detectLinkProvider } from "@/lib/materials";
 
 type SessionUser = {
   id: string;
@@ -204,7 +205,7 @@ export async function deleteFeedback(feedbackId: string, user: SessionUser) {
   return { ok: true as const };
 }
 
-export async function addFeedbackMedia(feedbackId: string, params: { fileName: string; objectPath: string; mimeType: string }, user: SessionUser) {
+export async function addFeedbackMedia(feedbackId: string, params: { fileName: string; objectPath: string; mimeType: string; fileSize: number }, user: SessionUser) {
   const existing = await prisma.feedbackEntry.findUnique({
     where: { id: feedbackId },
     select: { id: true, authorId: true }
@@ -230,7 +231,10 @@ export async function addFeedbackMedia(feedbackId: string, params: { fileName: s
       feedbackEntryId: feedbackId,
       type,
       fileName: params.fileName,
-      url: minioObjectUrl(params.objectPath)
+      url: minioObjectUrl(params.objectPath),
+      mimeType: params.mimeType,
+      fileSize: params.fileSize,
+      title: params.fileName
     }
   });
 
@@ -263,4 +267,24 @@ export async function removeFeedbackMedia(feedbackId: string, mediaId: string, u
   await prisma.feedbackMedia.delete({ where: { id: media.id } });
 
   return { ok: true as const };
+}
+
+export async function addFeedbackExternalLink(feedbackId: string, input: { title: string; externalUrl: string; description?: string }, user: SessionUser) {
+  const existing = await prisma.feedbackEntry.findUnique({ where: { id: feedbackId }, select: { id: true, authorId: true } });
+  if (!existing) return { ok: false as const, status: 404, error: "Feedback not found." };
+  if (existing.authorId !== user.id && !isAdmin(user)) return { ok: false as const, status: 403, error: "You cannot add links to this feedback." };
+
+  const media = await prisma.feedbackMedia.create({
+    data: {
+      feedbackEntryId: feedbackId,
+      type: "external_link",
+      fileName: input.title,
+      title: input.title,
+      description: input.description || null,
+      externalUrl: input.externalUrl,
+      url: input.externalUrl
+    }
+  });
+
+  return { ok: true as const, media: { ...media, provider: detectLinkProvider(input.externalUrl) } };
 }
