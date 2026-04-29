@@ -241,7 +241,6 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
               {busy === "comment" ? "Posting..." : "Add comment"}
             </Button>
           </form>
-          </>
         ) : null}
       </section>
 
@@ -259,11 +258,21 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
                 <p>
                   <span className="font-medium">What to improve:</span> {entry.whatToImprove}
                 </p>
-                {!!entry.media.length && (<MaterialGallery items={entry.media} onDelete={canManage ? (mediaId) => runAction(`feedback-media-delete-${mediaId}`, async () => {
-                                const response = await fetch(`/api/feedback/${entry.id}/media/${mediaId}`, { method: "DELETE" });
-                                const data = (await response.json()) as { error?: string };
-                                if (!response.ok) throw new Error(data.error ?? "Delete failed.");
-                              }) : undefined} />)}                )}
+                {!!entry.media.length && (
+                  <MaterialGallery
+                    items={entry.media}
+                    onDelete={
+                      canManage
+                        ? (mediaId) =>
+                            runAction(`feedback-media-delete-${mediaId}`, async () => {
+                              const response = await fetch(`/api/feedback/${entry.id}/media/${mediaId}`, { method: "DELETE" });
+                              const data = (await response.json()) as { error?: string };
+                              if (!response.ok) throw new Error(data.error ?? "Delete failed.");
+                            })
+                        : undefined
+                    }
+                  />
+                )}
                 <p className="text-xs text-muted-foreground">
                   {entry.author.name} · {new Date(entry.createdAt).toLocaleString()}
                 </p>
@@ -337,7 +346,6 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
               {busy === "feedback" ? "Saving..." : "Add feedback"}
             </Button>
           </form>
-          </>
         ) : null}
       </section>
 
