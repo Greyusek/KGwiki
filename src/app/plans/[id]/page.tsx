@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { AddToWeekPlanButton } from "@/components/plans/add-to-week-plan-button";
 import { DeletePlanButton } from "@/components/plans/delete-plan-button";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
@@ -32,7 +31,6 @@ export default async function PlanDetailsPage({ params }: { params: Promise<{ id
 
       {plan.type === "day" ? (
         <>
-        <AddToWeekPlanButton dayPlanId={plan.id} />
         <ul className="space-y-3">
           {plan.items.map((item) => (
             <li key={item.id} className="rounded-md border p-3 text-sm">
