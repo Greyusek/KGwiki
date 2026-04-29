@@ -12,6 +12,7 @@ function ownerFilter(user: SessionUser): Prisma.PlanWhereInput {
 function accessibleAttachedDayPlanFilter(user: SessionUser): Prisma.PlanWhereInput {
   return {
     type: "day",
+    isInlineOnly: false,
     ...ownerFilter(user)
   };
 }
@@ -27,6 +28,7 @@ function buildWeekDayCreateInput(day: NonNullable<PlanInput["weekDays"]>[number]
               authorId: userId,
               type: "day",
               title: `Day ${day.dayIndex + 1}`,
+              isInlineOnly: true,
               date: null,
               items: {
                 create: day.inlineDayPlan.items.map((item, index) => ({
@@ -144,6 +146,7 @@ export async function createPlan(input: PlanInput, user: SessionUser) {
         authorId: user.id,
         type: "day",
         title: input.title,
+        isInlineOnly: false,
         date: null,
         items: {
           create: (input.items ?? []).map((item, index) => ({
@@ -228,6 +231,7 @@ export async function updatePlan(id: string, input: PlanInput, user: SessionUser
         data: {
           type: "day",
           title: input.title,
+          isInlineOnly: false,
           date: null,
           weekDays: { deleteMany: {} },
           items: {
@@ -297,6 +301,37 @@ export async function addActivityToDayPlan(
   });
 
   return { ok: true as const, planItem };
+}
+
+
+export async function attachDayPlanToWeekPlan(
+  dayPlanId: string,
+  input: { weekPlanId: string; dayIndex: number },
+  user: SessionUser
+) {
+  const [dayPlan, weekPlan] = await Promise.all([
+    prisma.plan.findFirst({ where: { id: dayPlanId, ...accessibleAttachedDayPlanFilter(user) }, select: { id: true } }),
+    prisma.plan.findFirst({
+      where: { id: input.weekPlanId, type: "week", ...ownerFilter(user) },
+      include: { weekDays: { select: { id: true, dayIndex: true, attachedDayPlanId: true, inlineDayPlanId: true } } }
+    })
+  ]);
+
+  if (!dayPlan) return { ok: false as const, status: 404, error: "Day plan not found." };
+  if (!weekPlan) return { ok: false as const, status: 404, error: "Week plan not found." };
+
+  const target = weekPlan.weekDays.find((entry) => entry.dayIndex === input.dayIndex);
+  if (!target) return { ok: false as const, status: 400, error: "Invalid day slot." };
+  if (target.attachedDayPlanId || target.inlineDayPlanId) {
+    return { ok: false as const, status: 400, error: "Selected day slot is not empty." };
+  }
+
+  const updated = await prisma.weekPlanDay.update({
+    where: { id: target.id },
+    data: { attachedDayPlanId: dayPlanId }
+  });
+
+  return { ok: true as const, data: updated };
 }
 
 export async function deletePlan(id: string, user: SessionUser) {

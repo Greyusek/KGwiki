@@ -158,6 +158,7 @@ model Plan {
   authorId      String
   type          PlanType
   title         String
+  isInlineOnly  Boolean   @default(false)
   date          DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
