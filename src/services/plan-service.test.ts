@@ -11,7 +11,8 @@ const { prismaMock } = vi.hoisted(() => ({
     },
     weekPlanDay: {
       findMany: vi.fn(),
-      deleteMany: vi.fn()
+      deleteMany: vi.fn(),
+      update: vi.fn()
     },
     $transaction: vi.fn()
   }
@@ -19,7 +20,7 @@ const { prismaMock } = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
-import { createPlan, sortDayPlanItemsForTest, updatePlan } from "@/services/plan-service";
+import { attachDayPlanToWeekPlan, createPlan, sortDayPlanItemsForTest, updatePlan } from "@/services/plan-service";
 
 describe("plan-service", () => {
   beforeEach(() => {
@@ -29,6 +30,7 @@ describe("plan-service", () => {
     prismaMock.plan.findFirst.mockResolvedValue({ id: "plan-1" });
     prismaMock.weekPlanDay.findMany.mockResolvedValue([]);
     prismaMock.weekPlanDay.deleteMany.mockResolvedValue({ count: 0 });
+    prismaMock.weekPlanDay.update.mockResolvedValue({ id: "wday-1" });
     prismaMock.plan.deleteMany.mockResolvedValue({ count: 0 });
     prismaMock.plan.update.mockResolvedValue({ id: "plan-1" });
     prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof prismaMock) => Promise<unknown>) => callback(prismaMock));
@@ -171,4 +173,40 @@ describe("plan-service", () => {
     expect(result.ok).toBe(true);
     expect(prismaMock.plan.update).toHaveBeenCalledTimes(1);
   });
+
+  it("marks inline-created week day plans as inline only", async () => {
+    await createPlan({
+      type: "week",
+      title: "Inline Week",
+      workingDays: 1,
+      weekDays: [{ dayIndex: 0, inlineDayPlan: { items: [{ activityId: "a1", orderIndex: 0, plannedTime: null, notes: null }] } }]
+    }, { id: "u1", role: "user" });
+
+    expect(prismaMock.plan.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        weekDays: { create: [expect.objectContaining({ inlineDayPlan: { create: expect.objectContaining({ isInlineOnly: true }) } })] }
+      })
+    }));
+  });
+
+  it("attaches day plan only to empty week slot", async () => {
+    prismaMock.plan.findFirst
+      .mockResolvedValueOnce({ id: "day-1" })
+      .mockResolvedValueOnce({ id: "week-1", weekDays: [{ id: "d0", dayIndex: 0, attachedDayPlanId: null, inlineDayPlanId: null }] });
+
+    const result = await attachDayPlanToWeekPlan("day-1", { weekPlanId: "week-1", dayIndex: 0 }, { id: "u1", role: "user" });
+    expect(result.ok).toBe(true);
+    expect(prismaMock.weekPlanDay.update).toHaveBeenCalled();
+  });
+
+  it("blocks attach when all week slots are filled", async () => {
+    prismaMock.plan.findFirst
+      .mockResolvedValueOnce({ id: "day-1" })
+      .mockResolvedValueOnce({ id: "week-1", weekDays: [{ id: "d0", dayIndex: 0, attachedDayPlanId: "existing", inlineDayPlanId: null }] });
+
+    const result = await attachDayPlanToWeekPlan("day-1", { weekPlanId: "week-1", dayIndex: 0 }, { id: "u1", role: "user" });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain("not empty");
+  });
+
 });
