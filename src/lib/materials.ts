@@ -32,11 +32,31 @@ export const ALLOWED_MIME_TYPE_TO_MEDIA_TYPE: Record<string, ActivityMediaType> 
   "application/vnd.openxmlformats-officedocument.presentationml.presentation": "document"
 };
 
-export function detectLinkProvider(url: string) {
-  const host = new URL(url).hostname.toLowerCase();
+export function safeParseUrl(url?: string | null): URL | null {
+  if (!url) return null;
+
+  try {
+    if (typeof window !== "undefined") {
+      return new URL(url, window.location.origin);
+    }
+
+    return new URL(url);
+  } catch {
+    return null;
+  }
+}
+
+export function getLinkProvider(url?: string | null): string {
+  const parsedUrl = safeParseUrl(url);
+  if (!parsedUrl) return "External link";
+
+  const host = parsedUrl.hostname.toLowerCase();
+  if (!host || host === "localhost") return "External link";
   if (host.includes("dropbox")) return "Dropbox";
   if (host.includes("disk.yandex") || host.includes("yadi.sk")) return "Yandex Disk";
   if (host.includes("drive.google")) return "Google Drive";
   if (host.includes("onedrive") || host.includes("1drv.ms")) return "OneDrive";
   return "External link";
 }
+
+export const detectLinkProvider = getLinkProvider;
