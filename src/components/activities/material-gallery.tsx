@@ -54,8 +54,8 @@ export function MaterialGallery({ items, onDelete }: { items: MaterialItem[]; on
         {items.map((m) => {
           const label = m.title || m.fileName;
           const fileSize = formatFileSize(m.fileSize);
-          const linkUrl = m.externalUrl || m.url;
-          const provider = detectLinkProvider(linkUrl);
+          const linkUrl = m.type === "external_link" ? (m.externalUrl || "") : m.url;
+          const provider = m.type === "external_link" ? detectLinkProvider(m.externalUrl) : null;
 
           return (
             <article key={m.id} className="flex h-full min-h-56 flex-col rounded-lg border bg-card p-3 text-sm shadow-sm">
@@ -100,7 +100,7 @@ export function MaterialGallery({ items, onDelete }: { items: MaterialItem[]; on
               {m.type === "external_link" && (
                 <div className="flex flex-1 flex-col justify-between rounded-md border bg-muted/30 p-3">
                   <div className="space-y-1">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">{provider}</p>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">{provider || "External link"}</p>
                     {m.description ? <p className="line-clamp-3 text-xs text-muted-foreground">{m.description}</p> : null}
                   </div>
                   <a className="mt-3 inline-block text-sm font-medium text-blue-600 hover:underline" href={linkUrl} target="_blank" rel="noopener noreferrer">Open link</a>
