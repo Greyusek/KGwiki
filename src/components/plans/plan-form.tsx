@@ -139,6 +139,7 @@ export function PlanForm({
           workingDays,
           weekDays: visibleWeekDays.map((day, index) => ({
             dayIndex: index,
+            inlineTitle: day.mode === "inline" ? day.inlineTitle : "",
             attachedDayPlanId: day.mode === "attach" ? day.attachedDayPlanId : null,
             inlineDayPlan: day.mode === "inline" ? {
               items: day.inlineItems.map((item, itemIndex) => ({
