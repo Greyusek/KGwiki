@@ -27,7 +27,7 @@ function buildWeekDayCreateInput(day: NonNullable<PlanInput["weekDays"]>[number]
             create: {
               authorId: userId,
               type: "day",
-              title: `Day ${day.dayIndex + 1}`,
+              title: day.inlineTitle.trim() || `Day ${day.dayIndex + 1}`,
               isInlineOnly: true,
               date: null,
               items: {

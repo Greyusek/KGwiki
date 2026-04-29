@@ -42,6 +42,7 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
             dayIndex: day.dayIndex,
             mode: day.attachedDayPlanId ? "attach" : "inline",
             attachedDayPlanId: day.attachedDayPlanId ?? dayPlans[0]?.id ?? "",
+            inlineTitle: day.inlineDayPlan?.title ?? "",
             inlineItems: (day.inlineDayPlan?.items ?? [{ activityId: activities[0]?.id ?? "", plannedTime: null, notes: null, orderIndex: 0 }]).map((item) => ({
               activityId: item.activityId,
               plannedTime: item.plannedTime ?? "",
