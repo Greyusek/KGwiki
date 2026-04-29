@@ -49,3 +49,9 @@ export const planSchema = z
   });
 
 export type PlanInput = z.infer<typeof planSchema>;
+
+
+export const saveInlineDayPlanSchema = z.object({
+  title: z.string().trim().min(2).max(120),
+  items: z.array(dayPlanItemSchema).min(1)
+});
