@@ -304,36 +304,6 @@ export async function addActivityToDayPlan(
 }
 
 
-export async function attachDayPlanToWeekPlan(
-  dayPlanId: string,
-  input: { weekPlanId: string; dayIndex: number },
-  user: SessionUser
-) {
-  const [dayPlan, weekPlan] = await Promise.all([
-    prisma.plan.findFirst({ where: { id: dayPlanId, ...accessibleAttachedDayPlanFilter(user) }, select: { id: true } }),
-    prisma.plan.findFirst({
-      where: { id: input.weekPlanId, type: "week", ...ownerFilter(user) },
-      include: { weekDays: { select: { id: true, dayIndex: true, attachedDayPlanId: true, inlineDayPlanId: true } } }
-    })
-  ]);
-
-  if (!dayPlan) return { ok: false as const, status: 404, error: "Day plan not found." };
-  if (!weekPlan) return { ok: false as const, status: 404, error: "Week plan not found." };
-
-  const target = weekPlan.weekDays.find((entry) => entry.dayIndex === input.dayIndex);
-  if (!target) return { ok: false as const, status: 400, error: "Invalid day slot." };
-  if (target.attachedDayPlanId || target.inlineDayPlanId) {
-    return { ok: false as const, status: 400, error: "Selected day slot is not empty." };
-  }
-
-  const updated = await prisma.weekPlanDay.update({
-    where: { id: target.id },
-    data: { attachedDayPlanId: dayPlanId }
-  });
-
-  return { ok: true as const, data: updated };
-}
-
 export async function deletePlan(id: string, user: SessionUser) {
   const existing = await prisma.plan.findFirst({ where: { id, ...ownerFilter(user) }, select: { id: true } });
   if (!existing) return { ok: false as const, status: 404, error: "Plan not found." };
