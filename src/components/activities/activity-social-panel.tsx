@@ -82,38 +82,36 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
                     }) : undefined} />
 
         {currentUser && (currentUser.id === activity.authorId || currentUser.role === "admin") ? (
-          <>
-          <div className="space-y-2">
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              const formData = new FormData(event.currentTarget);
-              const file = formData.get("file");
-              if (!(file instanceof File) || !file.size) {
-                setError("Choose a file to upload.");
-                return;
-              }
-
-              runAction("activity-media", async () => {
-                const body = new FormData();
-                body.append("file", file);
-                const response = await fetch(`/api/activities/${activity.id}/media`, { method: "POST", body });
-                const data = (await response.json()) as { error?: string };
-                if (!response.ok) {
-                  throw new Error(data.error ?? "Upload failed.");
+          <div className="space-y-3 rounded-lg border bg-muted/20 p-3">
+            <h3 className="text-sm font-semibold">Add material</h3>
+            <form
+              className="space-y-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const formData = new FormData(event.currentTarget);
+                const file = formData.get("file");
+                if (!(file instanceof File) || !file.size) {
+                  setError("Choose a file to upload.");
+                  return;
                 }
-                (event.currentTarget as HTMLFormElement).reset();
-              });
-            }}
-          >
-            <input type="file" name="file" className="text-xs" />
-            <Button size="sm" type="submit" className="ml-2" disabled={busy === "activity-media"}>
-              Upload file
-            </Button>
-          </form>
-          <form className="mt-2 space-y-2" onSubmit={(event)=>{event.preventDefault(); const formData=new FormData(event.currentTarget); runAction("activity-media-link", async()=>{await submitJson(`/api/activities/${activity.id}/media`,"POST",{title:String(formData.get("title")||""), externalUrl:String(formData.get("externalUrl")||""), description:String(formData.get("description")||"")}); (event.currentTarget as HTMLFormElement).reset();});}}><input name="title" placeholder="Link title" className="w-full rounded-md border px-2 py-1 text-sm" required/><input name="externalUrl" placeholder="https://..." className="w-full rounded-md border px-2 py-1 text-sm" required/><input name="description" placeholder="Description (optional)" className="w-full rounded-md border px-2 py-1 text-sm"/><Button size="sm" type="submit">Add external link</Button></form>
+
+                runAction("activity-media", async () => {
+                  const body = new FormData();
+                  body.append("file", file);
+                  const response = await fetch(`/api/activities/${activity.id}/media`, { method: "POST", body });
+                  const data = (await response.json()) as { error?: string };
+                  if (!response.ok) {
+                    throw new Error(data.error ?? "Upload failed.");
+                  }
+                  (event.currentTarget as HTMLFormElement).reset();
+                });
+              }}
+            >
+              <input type="file" name="file" aria-label="Upload material file" className="w-full text-xs" />
+              <Button size="sm" type="submit" disabled={busy === "activity-media"}>Upload file</Button>
+            </form>
+            <form className="space-y-2" onSubmit={(event)=>{event.preventDefault(); const formData=new FormData(event.currentTarget); runAction("activity-media-link", async()=>{await submitJson(`/api/activities/${activity.id}/media`,"POST",{title:String(formData.get("title")||""), externalUrl:String(formData.get("externalUrl")||""), description:String(formData.get("description")||"")}); (event.currentTarget as HTMLFormElement).reset();});}}><input name="title" placeholder="Link title" className="w-full rounded-md border px-2 py-1 text-sm" required/><input name="externalUrl" placeholder="https://..." className="w-full rounded-md border px-2 py-1 text-sm" required/><input name="description" placeholder="Description (optional)" className="w-full rounded-md border px-2 py-1 text-sm"/><Button size="sm" type="submit">Add external link</Button></form>
           </div>
-          </>
         ) : null}
       </section>
 
@@ -258,27 +256,26 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
                 <p>
                   <span className="font-medium">What to improve:</span> {entry.whatToImprove}
                 </p>
-                {!!entry.media.length && (
-                  <MaterialGallery
-                    items={entry.media}
-                    onDelete={
-                      canManage
-                        ? (mediaId) =>
-                            runAction(`feedback-media-delete-${mediaId}`, async () => {
-                              const response = await fetch(`/api/feedback/${entry.id}/media/${mediaId}`, { method: "DELETE" });
-                              const data = (await response.json()) as { error?: string };
-                              if (!response.ok) throw new Error(data.error ?? "Delete failed.");
-                            })
-                        : undefined
-                    }
-                  />
-                )}
+                <MaterialGallery
+                  items={entry.media}
+                  onDelete={
+                    canManage
+                      ? (mediaId) =>
+                          runAction(`feedback-media-delete-${mediaId}`, async () => {
+                            const response = await fetch(`/api/feedback/${entry.id}/media/${mediaId}`, { method: "DELETE" });
+                            const data = (await response.json()) as { error?: string };
+                            if (!response.ok) throw new Error(data.error ?? "Delete failed.");
+                          })
+                      : undefined
+                  }
+                />
                 <p className="text-xs text-muted-foreground">
                   {entry.author.name} · {new Date(entry.createdAt).toLocaleString()}
                 </p>
 
                 {canManage ? (
-                  <div className="space-y-2">
+                  <div className="space-y-3 rounded-md border bg-muted/20 p-3">
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Add material</h4>
                     <form
                       onSubmit={(event) => {
                         event.preventDefault();
@@ -301,8 +298,8 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
                         });
                       }}
                     >
-                      <input type="file" name="file" className="text-xs" />
-                      <Button size="sm" type="submit" className="ml-2" disabled={busy === `media-${entry.id}`}>
+                      <input type="file" name="file" aria-label="Upload feedback material file" className="w-full text-xs" />
+                      <Button size="sm" type="submit" disabled={busy === `media-${entry.id}`}>
                         Upload file
                       </Button>
                     </form>
