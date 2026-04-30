@@ -15,10 +15,11 @@ export async function GET(request: Request) {
   const q = searchParams.get("q") ?? undefined;
   const page = Number(searchParams.get("page") ?? "1");
   const pageSize = Number(searchParams.get("pageSize") ?? "10");
+  const scope = searchParams.get("scope");
 
   const plans = await listPlans(
     { id: session.user.id, role: session.user.role },
-    { type: type === "day" || type === "week" ? type : undefined, q, page, pageSize }
+    { type: type === "day" || type === "week" ? type : undefined, q, page, pageSize, scope: scope === "my" || scope === "available" || scope === "public" || scope === "shared" || scope === "all" ? scope : undefined }
   );
   return NextResponse.json({ data: plans });
 }

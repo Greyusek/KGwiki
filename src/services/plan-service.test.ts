@@ -7,19 +7,23 @@ const { prismaMock } = vi.hoisted(() => ({
       create: vi.fn(),
       findFirst: vi.fn(),
       update: vi.fn(),
-      deleteMany: vi.fn()
+      deleteMany: vi.fn(),
+      count: vi.fn()
     },
+    planShare: { deleteMany: vi.fn() },
     weekPlanDay: {
       findMany: vi.fn(),
-      deleteMany: vi.fn()
+      deleteMany: vi.fn(),
+      count: vi.fn()
     },
+    planShare: { deleteMany: vi.fn() },
     $transaction: vi.fn()
   }
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
-import { createPlan, sortDayPlanItemsForTest, updatePlan } from "@/services/plan-service";
+import { canEditPlan, createPlan, getPlanById, listPlans, sortDayPlanItemsForTest, updatePlan } from "@/services/plan-service";
 
 describe("plan-service", () => {
   beforeEach(() => {
@@ -31,6 +35,8 @@ describe("plan-service", () => {
     prismaMock.weekPlanDay.deleteMany.mockResolvedValue({ count: 0 });
     prismaMock.plan.deleteMany.mockResolvedValue({ count: 0 });
     prismaMock.plan.update.mockResolvedValue({ id: "plan-1" });
+    prismaMock.plan.count.mockResolvedValue(0);
+    prismaMock.planShare.deleteMany.mockResolvedValue({ count: 0 });
     prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof prismaMock) => Promise<unknown>) => callback(prismaMock));
   });
 
@@ -116,7 +122,7 @@ describe("plan-service", () => {
     }, { id: "u1", role: "user" })).resolves.toBeTruthy();
 
     expect(prismaMock.plan.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: expect.objectContaining({ id: { in: ["day-1"] }, type: "day", authorId: "u1" })
+      where: expect.objectContaining({ id: { in: ["day-1"] }, type: "day" })
     }));
   });
 
@@ -185,6 +191,24 @@ describe("plan-service", () => {
         weekDays: { create: [expect.objectContaining({ inlineDayPlan: { create: expect.objectContaining({ isInlineOnly: true }) } })] }
       })
     }));
+  });
+
+  it("applies available scope and shared/private visibility filters", async () => {
+    prismaMock.plan.findMany.mockResolvedValue([]);
+    await listPlans({ id: "u2", role: "user" }, { scope: "available" });
+    expect(prismaMock.plan.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ OR: expect.any(Array) }) }));
+  });
+
+  it("fetches shared plan for selected user", async () => {
+    prismaMock.plan.findFirst.mockResolvedValue({ id: "p1", items: [], weekDays: [], shares: [], author: { id: "u1", name: "A", bio: null } });
+    const plan = await getPlanById("p1", { id: "u2", role: "user" });
+    expect(plan?.id).toBe("p1");
+    expect(prismaMock.plan.findFirst).toHaveBeenCalled();
+  });
+
+  it("non-author cannot edit public/shared plan", () => {
+    expect(canEditPlan("author-1", { id: "u2", role: "user" })).toBe(false);
+    expect(canEditPlan("author-1", { id: "admin-1", role: "admin" })).toBe(true);
   });
 
 });

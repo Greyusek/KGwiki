@@ -199,3 +199,13 @@ In non-production environments, the generated reset link is logged to the server
 - External links: add http/https links (Dropbox, Yandex Disk, Google Drive, OneDrive, generic).
 - Known limitations: no resumable/chunked uploads yet; media route does not implement HTTP range responses for advanced seeking.
 
+
+## Plan visibility and sharing
+
+Plans support three visibility modes:
+- `private`: only author and admin can view.
+- `public`: any authenticated user can view.
+- `shared`: author/admin plus explicitly shared users can view.
+
+Only author or admin can edit/delete a plan regardless of visibility. Shared/public access is read-only.
+

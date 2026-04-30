@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { DeletePlanButton } from "@/components/plans/delete-plan-button";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
-import { getPlanById } from "@/services/plan-service";
+import { canEditPlan, getPlanById } from "@/services/plan-service";
 
 export default async function PlanDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -15,6 +15,7 @@ export default async function PlanDetailsPage({ params }: { params: Promise<{ id
   const { id } = await params;
   const plan = await getPlanById(id, { id: session.user.id, role: session.user.role });
   if (!plan) notFound();
+  const canEdit = canEditPlan(plan.authorId, { id: session.user.id, role: session.user.role });
 
   return (
     <section className="space-y-4">
@@ -23,10 +24,7 @@ export default async function PlanDetailsPage({ params }: { params: Promise<{ id
           <h1 className="text-2xl font-semibold">{plan.title}</h1>
           <p className="text-sm text-muted-foreground">{plan.type} plan · author: {plan.author.name}</p>
         </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline"><Link href={`/plans/${plan.id}/edit`}>Edit</Link></Button>
-          <DeletePlanButton id={plan.id} />
-        </div>
+        {canEdit ? <div className="flex gap-2"><Button asChild variant="outline"><Link href={`/plans/${plan.id}/edit`}>Edit</Link></Button><DeletePlanButton id={plan.id} /></div> : null}
       </div>
 
       {plan.type === "day" ? (
