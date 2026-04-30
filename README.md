@@ -93,6 +93,15 @@ docker compose down -v
 
 ---
 
+
+## Backup and Restore
+
+For safe updates and emergency recovery, use:
+- `./scripts/backup.sh`
+- `./scripts/restore.sh backups/YYYY-MM-DD_HH-MM-SS`
+
+Full step-by-step guide (RU): [`BACKUP_RESTORE.md`](./BACKUP_RESTORE.md)
+
 ## Troubleshooting
 
 ### Prisma issues
