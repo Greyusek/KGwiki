@@ -21,6 +21,7 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
     orderBy: { title: "asc" }
   });
   const dayPlans = await listDayPlansForUser({ id: session.user.id, role: session.user.role });
+  const users = await prisma.user.findMany({ where: { id: { not: session.user.id } }, select: { id: true, name: true }, orderBy: { name: "asc" } });
 
   return (
     <section className="space-y-3">
@@ -29,9 +30,12 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
         planId={plan.id}
         activities={activities}
         dayPlans={dayPlans.map((entry) => ({ id: entry.id, title: entry.title }))}
+        shareUsers={users}
         initial={{
           type: plan.type,
           title: plan.title,
+          visibility: plan.visibility,
+          sharedUserIds: plan.shares.map((entry) => entry.userId),
           workingDays: plan.weekDays.length || 5,
           items: plan.items.map((item) => ({
             activityId: item.activityId,

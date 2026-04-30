@@ -24,6 +24,8 @@ export const planSchema = z
   .object({
     type: z.enum(["day", "week"]),
     title: z.string().trim().min(2).max(120),
+    visibility: z.enum(["private", "public", "shared"]).default("private"),
+    sharedUserIds: z.array(z.string().min(1)).optional().default([]),
     workingDays: z.number().int().min(2).max(6).optional(),
     items: z.array(dayPlanItemSchema).optional(),
     weekDays: z.array(weekDaySchema).optional()
@@ -47,6 +49,10 @@ export const planSchema = z
   }, {
     message: "Week day indexes must be sequential and start from day 0.",
     path: ["weekDays"]
+  })
+  .refine((value) => (value.visibility === "shared" ? (value.sharedUserIds?.length ?? 0) > 0 : true), {
+    message: "Shared visibility requires at least one selected user.",
+    path: ["sharedUserIds"]
   });
 
 export type PlanInput = z.infer<typeof planSchema>;

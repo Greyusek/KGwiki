@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 
 type ActivityOption = { id: string; title: string };
 type DayPlanOption = { id: string; title: string };
+type ShareUserOption = { id: string; name: string };
 
 type PlanItemInput = {
   activityId: string;
@@ -40,7 +41,8 @@ export function PlanForm({
   activities,
   dayPlans,
   initial,
-  planId
+  planId,
+  shareUsers
 }: {
   activities: ActivityOption[];
   dayPlans: DayPlanOption[];
@@ -48,10 +50,13 @@ export function PlanForm({
     type: "day" | "week";
     title: string;
     workingDays: number;
+    visibility?: "private" | "public" | "shared";
+    sharedUserIds?: string[];
     items: PlanItemInput[];
     weekDays: WeekDayInput[];
   };
   planId?: string;
+  shareUsers: ShareUserOption[];
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +67,8 @@ export function PlanForm({
     initial?.items.length ? initial.items : [createEmptyPlanItem(activities)]
   );
   const [workingDays, setWorkingDays] = useState<number>(initial?.workingDays ?? 5);
+  const [visibility, setVisibility] = useState<"private" | "public" | "shared">(initial?.visibility ?? "private");
+  const [sharedUserIds, setSharedUserIds] = useState<string[]>(initial?.sharedUserIds ?? []);
   const [availableDayPlans, setAvailableDayPlans] = useState<DayPlanOption[]>(dayPlans);
   const [weekDays, setWeekDays] = useState<WeekDayInput[]>(
     initial?.weekDays.length
@@ -152,11 +159,13 @@ export function PlanForm({
           }))
         };
 
+    const fullPayload = { ...payload, visibility, sharedUserIds: visibility === "shared" ? sharedUserIds : [] };
+
     try {
       const response = await fetch(planId ? `/api/plans/${planId}` : "/api/plans", {
         method: planId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(fullPayload)
       });
       const data = (await response.json()) as { error?: string; data?: { id: string } };
 
@@ -190,6 +199,29 @@ export function PlanForm({
           <p className="text-xs text-muted-foreground">Use a concise plan name (minimum 2 characters).</p>
           <input className="w-full rounded-md border px-3 py-2" value={title} onChange={(event) => setTitle(event.target.value)} required />
         </label>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="space-y-1 text-sm">
+          <span className="font-medium">Visibility</span>
+          <select className="w-full rounded-md border px-3 py-2" value={visibility} onChange={(event) => setVisibility(event.target.value as "private" | "public" | "shared")}>
+            <option value="private">Private</option>
+            <option value="public">Public</option>
+            <option value="shared">Shared</option>
+          </select>
+        </label>
+        {visibility === "shared" ? (
+          <fieldset className="space-y-1 text-sm">
+            <legend className="font-medium">Shared with users</legend>
+            <div className="max-h-28 overflow-auto rounded border p-2">
+              {shareUsers.map((user) => (
+                <label key={user.id} className="flex items-center gap-2">
+                  <input type="checkbox" checked={sharedUserIds.includes(user.id)} onChange={(event) => setSharedUserIds((prev) => event.target.checked ? [...prev, user.id] : prev.filter((id) => id !== user.id))} />
+                  <span>{user.name}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
       </div>
 
       {type === "day" ? (

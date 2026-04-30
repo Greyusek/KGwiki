@@ -25,6 +25,12 @@ enum PlanType {
   week
 }
 
+enum PlanVisibility {
+  private
+  public
+  shared
+}
+
 model User {
   id           String          @id @default(cuid())
   name         String
@@ -43,6 +49,7 @@ model User {
   feedbackEntries FeedbackEntry[]
   ratings         Rating[]
   plans           Plan[]
+  sharedPlans     PlanShare[]
 
   @@index([role])
 }
@@ -170,6 +177,7 @@ model Plan {
   authorId      String
   type          PlanType
   title         String
+  visibility    PlanVisibility @default(private)
   isInlineOnly  Boolean   @default(false)
   date          DateTime?
   createdAt     DateTime  @default(now())
@@ -180,9 +188,24 @@ model Plan {
   weekDays       WeekPlanDay[] @relation("WeekParent")
   attachedToWeek WeekPlanDay[] @relation("AttachedDayPlan")
   inlineForWeek  WeekPlanDay[] @relation("InlineDayPlan")
+  shares         PlanShare[]
 
   @@index([authorId, type])
+  @@index([visibility])
   @@index([date])
+}
+
+model PlanShare {
+  id        String   @id @default(cuid())
+  planId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, userId])
+  @@index([userId])
 }
 
 model PlanItem {

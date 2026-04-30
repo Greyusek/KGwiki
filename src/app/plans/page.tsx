@@ -8,7 +8,7 @@ import { listPlans } from "@/services/plan-service";
 export default async function PlansPage({
   searchParams
 }: {
-  searchParams: Promise<{ type?: string; q?: string; page?: string; pageSize?: string }>;
+  searchParams: Promise<{ type?: string; q?: string; page?: string; pageSize?: string; scope?: string }>;
 }) {
   const session = await auth();
   if (!session?.user?.id || !session.user.role) {
@@ -19,13 +19,15 @@ export default async function PlansPage({
   const type = params.type === "day" || params.type === "week" ? params.type : undefined;
   const q = params.q ?? "";
   const page = Math.max(Number(params.page ?? "1") || 1, 1);
+  const scope = params.scope ?? "available";
   const pageSize = [5, 10, 15].includes(Number(params.pageSize)) ? Number(params.pageSize) : 10;
-  const { items: plans, total } = await listPlans({ id: session.user.id, role: session.user.role }, { type, q, page, pageSize });
+  const { items: plans, total } = await listPlans({ id: session.user.id, role: session.user.role }, { type, q, page, pageSize, scope: scope as any });
   const totalPages = Math.max(Math.ceil(total / pageSize), 1);
 
   const buildHref = (next: Record<string, string>) => {
     const query = new URLSearchParams();
     if (type) query.set("type", type);
+    if (scope) query.set("scope", scope);
     if (q) query.set("q", q);
     query.set("pageSize", String(pageSize));
     for (const [key, value] of Object.entries(next)) query.set(key, value);
@@ -46,6 +48,13 @@ export default async function PlansPage({
           <option value="day">Day plans</option>
           <option value="week">Week plans</option>
         </select>
+        <select name="scope" defaultValue={scope} className="rounded border px-2 py-1 text-sm">
+          <option value="my">My plans</option>
+          <option value="available">Available to me</option>
+          <option value="public">Public plans</option>
+          <option value="shared">Shared with me</option>
+          {session.user.role === "admin" ? <option value="all">All plans</option> : null}
+        </select>
         <select name="pageSize" defaultValue={String(pageSize)} className="rounded border px-2 py-1 text-sm">
           {[5, 10, 15].map((size) => <option key={size} value={size}>{size} / page</option>)}
         </select>
@@ -58,7 +67,7 @@ export default async function PlansPage({
             <li key={plan.id} className="rounded-lg border p-4">
               <Link href={`/plans/${plan.id}`} className="font-medium text-blue-600 hover:underline">{plan.title}</Link>
               <p className="text-sm text-muted-foreground">
-                {plan.type === "day" ? "Day plan" : "Week plan"} · Author: {plan.author.name} ·
+                {plan.type === "day" ? "Day plan" : "Week plan"} · Visibility: {plan.visibility} · Author: {plan.author.name} ·
                 {plan.type === "day" ? ` Activities: ${plan.items.length}` : ` Working days: ${plan.weekDays.length}`}
               </p>
             </li>

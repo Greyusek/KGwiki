@@ -17,7 +17,7 @@ export default async function AdminPage() {
   const [users, activities, plans, comments] = await Promise.all([
     prisma.user.findMany({ select: { id: true, name: true, email: true, role: true }, orderBy: { createdAt: "desc" }, take: 50 }),
     prisma.activity.findMany({ select: { id: true, title: true, author: { select: { name: true } }, isPublic: true, category: true, ageGroup: true }, orderBy: { updatedAt: "desc" }, take: 50 }),
-    prisma.plan.findMany({ select: { id: true, title: true, type: true, author: { select: { name: true } } }, orderBy: { updatedAt: "desc" }, take: 50 }),
+    prisma.plan.findMany({ select: { id: true, title: true, type: true, visibility: true, shares: { select: { id: true } }, author: { select: { name: true } } }, orderBy: { updatedAt: "desc" }, take: 50 }),
     prisma.comment.findMany({ select: { id: true, content: true, author: { select: { name: true } }, activity: { select: { title: true } } }, orderBy: { createdAt: "desc" }, take: 50 })
   ]);
 
@@ -27,7 +27,7 @@ export default async function AdminPage() {
 
       <AdminTable title="Users" headers={["Name", "Email", "Role"]} rows={users.map((user) => [user.name, user.email, user.role])} />
       <AdminTable title="Activities" headers={["Title", "Author", "Public", "Category", "Age Group"]} rows={activities.map((activity) => [activity.title, activity.author.name, activity.isPublic ? "Yes" : "No", activity.category, activity.ageGroup])} />
-      <AdminTable title="Plans" headers={["Title", "Type", "Owner"]} rows={plans.map((plan) => [plan.title, plan.type, plan.author.name])} />
+      <AdminTable title="Plans" headers={["Title", "Type", "Visibility", "Owner", "Shared users"]} rows={plans.map((plan) => [plan.title, plan.type, plan.visibility, plan.author.name, String(plan.shares.length)])} />
       <AdminTable title="Comments" headers={["Comment", "Author", "Activity"]} rows={comments.map((comment) => [comment.content, comment.author.name, comment.activity.title])} />
     </section>
   );

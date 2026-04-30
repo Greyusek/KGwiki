@@ -5,7 +5,18 @@ import { PlanInput } from "@/lib/validators/plan";
 
 type SessionUser = { id: string; role: "user" | "admin" };
 
-function ownerFilter(user: SessionUser): Prisma.PlanWhereInput {
+function planAccessWhere(user: SessionUser): Prisma.PlanWhereInput {
+  if (user.role === "admin") return {};
+  return {
+    OR: [
+      { authorId: user.id },
+      { visibility: "public" },
+      { visibility: "shared", shares: { some: { userId: user.id } } }
+    ]
+  };
+}
+
+function editablePlanWhere(user: SessionUser): Prisma.PlanWhereInput {
   return user.role === "admin" ? {} : { authorId: user.id };
 }
 
@@ -13,7 +24,7 @@ function accessibleAttachedDayPlanFilter(user: SessionUser): Prisma.PlanWhereInp
   return {
     type: "day",
     isInlineOnly: false,
-    ...ownerFilter(user)
+    ...planAccessWhere(user)
   };
 }
 
@@ -29,6 +40,7 @@ function buildWeekDayCreateInput(day: NonNullable<PlanInput["weekDays"]>[number]
               type: "day",
               title: (day.inlineTitle ?? "").trim() || `Day ${day.dayIndex + 1}`,
               isInlineOnly: true,
+              visibility: "private",
               date: null,
               items: {
                 create: day.inlineDayPlan.items.map((item, index) => ({
@@ -56,6 +68,7 @@ function sortDayItems<T extends { plannedTime: string | null; orderIndex: number
 
 const dayPlanInclude = {
   author: { select: { id: true, name: true, bio: true } },
+  shares: { select: { userId: true } },
   items: {
     include: {
       activity: { select: { id: true, title: true, summary: true, category: true, ageGroup: true } }
@@ -78,9 +91,20 @@ const weekPlanInclude = {
   }
 } satisfies Prisma.PlanInclude;
 
-export async function listPlans(user: SessionUser, query?: { type?: "day" | "week"; q?: string; page?: number; pageSize?: number }) {
+export async function listPlans(user: SessionUser, query?: { type?: "day" | "week"; q?: string; page?: number; pageSize?: number; scope?: "my" | "available" | "public" | "shared" | "all" }) {
+  const scope = query?.scope ?? "available";
+  const scopeFilter: Prisma.PlanWhereInput = scope === "my"
+    ? { authorId: user.id }
+    : scope === "public"
+      ? { visibility: "public" }
+      : scope === "shared"
+        ? { visibility: "shared", shares: { some: { userId: user.id } } }
+        : scope === "all" && user.role === "admin"
+          ? {}
+          : planAccessWhere(user);
+
   const where: Prisma.PlanWhereInput = {
-    ...ownerFilter(user),
+    ...scopeFilter,
     ...(query?.type ? { type: query.type } : {}),
     ...(query?.q ? { title: { contains: query.q, mode: "insensitive" } } : {})
   };
@@ -88,228 +112,95 @@ export async function listPlans(user: SessionUser, query?: { type?: "day" | "wee
   const pageSize = Math.min(Math.max(query?.pageSize ?? 10, 1), 50);
 
   const [items, total] = await Promise.all([
-    prisma.plan.findMany({
-      where,
-      include: weekPlanInclude,
-      orderBy: { updatedAt: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize
-    }),
+    prisma.plan.findMany({ where, include: weekPlanInclude, orderBy: { updatedAt: "desc" }, skip: (page - 1) * pageSize, take: pageSize }),
     prisma.plan.count({ where })
   ]);
 
-  return {
-    items: items.map((plan) => ({
-      ...plan,
-      items: sortDayItems(plan.items)
-    })),
-    total,
-    page,
-    pageSize
-  };
+  return { items: items.map((plan) => ({ ...plan, items: sortDayItems(plan.items) })), total, page, pageSize };
 }
 
 export async function listDayPlansForUser(user: SessionUser) {
-  return prisma.plan.findMany({
-    where: accessibleAttachedDayPlanFilter(user),
-    select: { id: true, title: true },
-    orderBy: { updatedAt: "desc" }
-  });
+  return prisma.plan.findMany({ where: accessibleAttachedDayPlanFilter(user), select: { id: true, title: true }, orderBy: { updatedAt: "desc" } });
 }
 
 export async function getPlanById(id: string, user: SessionUser) {
-  const plan = await prisma.plan.findFirst({
-    where: { id, ...ownerFilter(user) },
-    include: weekPlanInclude
-  });
+  const plan = await prisma.plan.findFirst({ where: { id, ...planAccessWhere(user) }, include: weekPlanInclude });
   if (!plan) return null;
-
   return {
     ...plan,
     items: sortDayItems(plan.items),
-    weekDays: plan.weekDays.map((day) => ({
-      ...day,
-      attachedDayPlan: day.attachedDayPlan
-        ? { ...day.attachedDayPlan, items: sortDayItems(day.attachedDayPlan.items) }
-        : null,
-      inlineDayPlan: day.inlineDayPlan
-        ? { ...day.inlineDayPlan, items: sortDayItems(day.inlineDayPlan.items) }
-        : null
-    }))
+    weekDays: plan.weekDays.map((day) => ({ ...day, attachedDayPlan: day.attachedDayPlan ? { ...day.attachedDayPlan, items: sortDayItems(day.attachedDayPlan.items) } : null, inlineDayPlan: day.inlineDayPlan ? { ...day.inlineDayPlan, items: sortDayItems(day.inlineDayPlan.items) } : null }))
   };
+}
+
+function shareData(input: PlanInput, userId: string) {
+  const uniqueIds = [...new Set((input.sharedUserIds ?? []).filter((id) => id !== userId))];
+  return input.visibility === "shared" ? { create: uniqueIds.map((id) => ({ userId: id })) } : undefined;
 }
 
 export async function createPlan(input: PlanInput, user: SessionUser) {
   if (input.type === "day") {
-    const plan = await prisma.plan.create({
-      data: {
-        authorId: user.id,
-        type: "day",
-        title: input.title,
-        isInlineOnly: false,
-        date: null,
-        items: {
-          create: (input.items ?? []).map((item, index) => ({
-            activityId: item.activityId,
-            orderIndex: index,
-            notes: item.notes ?? null,
-            plannedTime: item.plannedTime ?? null
-          }))
-        }
-      }
+    return prisma.plan.create({
+      data: { authorId: user.id, type: "day", title: input.title, visibility: input.visibility, shares: shareData(input, user.id), isInlineOnly: false, date: null, items: { create: (input.items ?? []).map((item, index) => ({ activityId: item.activityId, orderIndex: index, notes: item.notes ?? null, plannedTime: item.plannedTime ?? null })) } }
     });
-    return plan;
   }
 
-  const weekDays = input.weekDays ?? [];
-  const attachedIds = Array.from(new Set(
-    weekDays
-      .map((day) => day.attachedDayPlanId)
-      .filter((value): value is string => Boolean(value))
-  ));
-
+  const attachedIds = Array.from(new Set((input.weekDays ?? []).map((day) => day.attachedDayPlanId).filter((value): value is string => Boolean(value))));
   if (attachedIds.length) {
-    const uniqueAttachedIds = [...new Set(attachedIds)];
-    const validAttachedPlans = await prisma.plan.findMany({
-      where: {
-        id: { in: uniqueAttachedIds },
-        ...accessibleAttachedDayPlanFilter(user)
-      },
-      select: { id: true }
-    });
-
-    if (validAttachedPlans.length !== uniqueAttachedIds.length) {
-      throw new Error("Some attached day plans are invalid or inaccessible.");
-    }
+    const validAttachedPlans = await prisma.plan.findMany({ where: { id: { in: attachedIds }, ...accessibleAttachedDayPlanFilter(user) }, select: { id: true } });
+    if (validAttachedPlans.length !== attachedIds.length) throw new Error("Some attached day plans are invalid or inaccessible.");
   }
 
-  const plan = await prisma.plan.create({
+  return prisma.plan.create({
     data: {
       authorId: user.id,
       type: "week",
       title: input.title,
-      weekDays: {
-        create: weekDays.map((day) => buildWeekDayCreateInput(day, user.id))
-      }
+      visibility: input.visibility,
+      shares: shareData(input, user.id),
+      weekDays: { create: (input.weekDays ?? []).map((day) => buildWeekDayCreateInput(day, user.id)) }
     }
   });
-
-  return plan;
 }
 
 export async function updatePlan(id: string, input: PlanInput, user: SessionUser) {
-  const existing = await prisma.plan.findFirst({ where: { id, ...ownerFilter(user) }, select: { id: true } });
+  const existing = await prisma.plan.findFirst({ where: { id, ...editablePlanWhere(user) }, select: { id: true } });
   if (!existing) return { ok: false as const, status: 404, error: "Plan not found." };
 
   if (input.type === "week") {
-    const attachedIds = Array.from(new Set(
-      (input.weekDays ?? [])
-        .map((day) => day.attachedDayPlanId)
-        .filter((value): value is string => Boolean(value))
-    ));
-
+    const attachedIds = Array.from(new Set((input.weekDays ?? []).map((day) => day.attachedDayPlanId).filter((value): value is string => Boolean(value))));
     if (attachedIds.length) {
-      const uniqueAttachedIds = [...new Set(attachedIds)];
-      const validAttachedPlans = await prisma.plan.findMany({
-        where: {
-          id: { in: uniqueAttachedIds },
-          ...accessibleAttachedDayPlanFilter(user)
-        },
-        select: { id: true }
-      });
-
-      if (validAttachedPlans.length !== uniqueAttachedIds.length) {
-        return { ok: false as const, status: 400, error: "Some attached day plans are invalid or inaccessible." };
-      }
+      const validAttachedPlans = await prisma.plan.findMany({ where: { id: { in: attachedIds }, ...accessibleAttachedDayPlanFilter(user) }, select: { id: true } });
+      if (validAttachedPlans.length !== attachedIds.length) return { ok: false as const, status: 400, error: "Some attached day plans are invalid or inaccessible." };
     }
   }
 
   const updated = await prisma.$transaction(async (tx) => {
+    await tx.planShare.deleteMany({ where: { planId: id } });
     if (input.type === "day") {
-      return tx.plan.update({
-        where: { id },
-        data: {
-          type: "day",
-          title: input.title,
-          isInlineOnly: false,
-          date: null,
-          weekDays: { deleteMany: {} },
-          items: {
-            deleteMany: {},
-            create: (input.items ?? []).map((item, index) => ({
-              activityId: item.activityId,
-              orderIndex: index,
-              notes: item.notes ?? null,
-              plannedTime: item.plannedTime ?? null
-            }))
-          }
-        }
-      });
+      return tx.plan.update({ where: { id }, data: { type: "day", title: input.title, visibility: input.visibility, shares: shareData(input, user.id), isInlineOnly: false, date: null, weekDays: { deleteMany: {} }, items: { deleteMany: {}, create: (input.items ?? []).map((item, index) => ({ activityId: item.activityId, orderIndex: index, notes: item.notes ?? null, plannedTime: item.plannedTime ?? null })) } } });
     }
 
     const oldWeekDays = await tx.weekPlanDay.findMany({ where: { weekPlanId: id }, select: { inlineDayPlanId: true } });
     await tx.weekPlanDay.deleteMany({ where: { weekPlanId: id } });
     const inlineIds = oldWeekDays.map((entry) => entry.inlineDayPlanId).filter((value): value is string => Boolean(value));
-    if (inlineIds.length) {
-      await tx.plan.deleteMany({ where: { id: { in: inlineIds } } });
-    }
+    if (inlineIds.length) await tx.plan.deleteMany({ where: { id: { in: inlineIds } } });
 
-    return tx.plan.update({
-      where: { id },
-      data: {
-        type: "week",
-        title: input.title,
-        date: null,
-        items: { deleteMany: {} },
-        weekDays: {
-          create: (input.weekDays ?? []).map((day) => buildWeekDayCreateInput(day, user.id))
-        }
-      }
-    });
+    return tx.plan.update({ where: { id }, data: { type: "week", title: input.title, visibility: input.visibility, shares: shareData(input, user.id), date: null, items: { deleteMany: {} }, weekDays: { create: (input.weekDays ?? []).map((day) => buildWeekDayCreateInput(day, user.id)) } } });
   });
 
   return { ok: true as const, plan: updated };
 }
 
-export async function addActivityToDayPlan(
-  dayPlanId: string,
-  input: { activityId: string; plannedTime?: string | null; notes?: string | null },
-  user: SessionUser
-) {
-  const dayPlan = await prisma.plan.findFirst({
-    where: { id: dayPlanId, type: "day", ...ownerFilter(user) },
-    select: { id: true }
-  });
-  if (!dayPlan) {
-    return { ok: false as const, status: 404, error: "Day plan not found." };
-  }
-
-  const activity = await prisma.activity.findUnique({ where: { id: input.activityId }, select: { id: true } });
-  if (!activity) {
-    return { ok: false as const, status: 404, error: "Activity not found." };
-  }
-
-  const maxOrder = await prisma.planItem.aggregate({ where: { planId: dayPlanId }, _max: { orderIndex: true } });
-  const planItem = await prisma.planItem.create({
-    data: {
-      planId: dayPlanId,
-      activityId: input.activityId,
-      orderIndex: (maxOrder._max.orderIndex ?? -1) + 1,
-      plannedTime: input.plannedTime ?? null,
-      notes: input.notes ?? null
-    }
-  });
-
-  return { ok: true as const, planItem };
-}
-
-
 export async function deletePlan(id: string, user: SessionUser) {
-  const existing = await prisma.plan.findFirst({ where: { id, ...ownerFilter(user) }, select: { id: true } });
+  const existing = await prisma.plan.findFirst({ where: { id, ...editablePlanWhere(user) }, select: { id: true } });
   if (!existing) return { ok: false as const, status: 404, error: "Plan not found." };
-
   await prisma.plan.delete({ where: { id } });
   return { ok: true as const };
+}
+
+export function canEditPlan(planAuthorId: string, user: SessionUser) {
+  return user.role === "admin" || planAuthorId === user.id;
 }
 
 export function sortDayPlanItemsForTest<T extends { plannedTime: string | null; orderIndex: number }>(items: T[]) {
