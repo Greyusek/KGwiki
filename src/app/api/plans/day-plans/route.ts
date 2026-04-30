@@ -26,6 +26,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid payload." }, { status: 400 });
   }
 
-  const plan = await createPlan({ type: "day", title: parsed.data.title, items: parsed.data.items }, { id: session.user.id, role: session.user.role });
+  const plan = await createPlan({ type: "day", title: parsed.data.title, visibility: "private", sharedUserIds: [], items: parsed.data.items }, { id: session.user.id, role: session.user.role });
   return NextResponse.json({ data: { id: plan.id, title: plan.title } }, { status: 201 });
 }

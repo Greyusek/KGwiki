@@ -29,6 +29,8 @@ describe("createPlan attachment permissions", () => {
       type: "week",
       title: "Week template",
       workingDays: 2,
+      visibility: "private",
+      sharedUserIds: [],
       weekDays: [
         { dayIndex: 0, attachedDayPlanId: "day-1" },
         { dayIndex: 1, attachedDayPlanId: "day-1" }
@@ -39,7 +41,7 @@ describe("createPlan attachment permissions", () => {
       where: expect.objectContaining({
         id: { in: ["day-1"] },
         type: "day",
-        authorId: "u1"
+        OR: expect.any(Array)
       }),
       select: { id: true }
     }));
@@ -53,6 +55,8 @@ describe("createPlan attachment permissions", () => {
       type: "week",
       title: "Admin week",
       workingDays: 2,
+      visibility: "private",
+      sharedUserIds: [],
       weekDays: [
         { dayIndex: 0, attachedDayPlanId: "day-2" },
         { dayIndex: 1, attachedDayPlanId: "day-2" }
@@ -71,6 +75,8 @@ describe("createPlan attachment permissions", () => {
         type: "week",
         title: "Week template",
         workingDays: 2,
+        visibility: "private",
+        sharedUserIds: [],
         weekDays: [
           { dayIndex: 0, attachedDayPlanId: "private-day-template" },
           { dayIndex: 1, attachedDayPlanId: "private-day-template" }
