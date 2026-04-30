@@ -85,11 +85,13 @@ Stop containers:
 docker compose down
 ```
 
-Stop and remove volumes (resets DB/MinIO data):
+Stop and remove volumes (**DANGEROUS: permanently deletes PostgreSQL/MinIO local data volumes**):
 
 ```bash
 docker compose down -v
 ```
+
+> ⚠️ Use only when you intentionally want a full local data reset and have a valid backup (`./scripts/backup.sh`).
 
 ---
 
