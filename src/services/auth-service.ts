@@ -11,6 +11,10 @@ import {
 
 const SALT_ROUNDS = 12;
 
+export async function hashPassword(password: string) {
+  return bcrypt.hash(password, SALT_ROUNDS);
+}
+
 export async function registerUser(input: RegisterInput) {
   const existingUser = await prisma.user.findUnique({
     where: { email: input.email }
@@ -20,7 +24,7 @@ export async function registerUser(input: RegisterInput) {
     return { ok: false as const, error: "Email is already registered." };
   }
 
-  const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
+  const passwordHash = await hashPassword(input.password);
 
   const user = await prisma.user.create({
     data: {
@@ -63,9 +67,21 @@ export async function changePassword(userId: string, input: ChangePasswordInput)
   if (!user) return { ok: false as const, status: 404, error: "User not found." };
 
   const valid = await bcrypt.compare(input.currentPassword, user.passwordHash);
-  if (!valid) return { ok: false as const, status: 400, error: "Current password is incorrect." };
+  if (!valid) return { ok: false as const, status: 400, error: "Invalid current password" };
+  if (input.currentPassword === input.newPassword) {
+    return { ok: false as const, status: 400, error: "New password must be different from current password." };
+  }
 
-  const passwordHash = await bcrypt.hash(input.newPassword, SALT_ROUNDS);
+  const passwordHash = await hashPassword(input.newPassword);
+  await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+  return { ok: true as const };
+}
+
+export async function adminResetUserPassword(userId: string, newPassword: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+  if (!user) return { ok: false as const, status: 404, error: "User not found." };
+
+  const passwordHash = await hashPassword(newPassword);
   await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
   return { ok: true as const };
 }
@@ -96,7 +112,7 @@ export async function resetPassword(token: string, newPassword: string) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) return { ok: false as const, status: 404, error: "User not found." };
 
-  const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  const passwordHash = await hashPassword(newPassword);
   await prisma.$transaction([
     prisma.user.update({ where: { id: user.id }, data: { passwordHash } }),
     prisma.verificationToken.delete({ where: { token: hashedToken } })

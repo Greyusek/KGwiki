@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
@@ -25,7 +26,31 @@ export default async function AdminPage() {
     <section className="space-y-6">
       <h1 className="text-2xl font-semibold">Admin</h1>
 
-      <AdminTable title="Users" headers={["Name", "Email", "Role"]} rows={users.map((user) => [user.name, user.email, user.role])} />
+      <section className="space-y-2 rounded-lg border p-4">
+        <h2 className="font-semibold">Users</h2>
+        {users.length ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead>
+                <tr>
+                  <th className="border-b px-2 py-1">Name</th><th className="border-b px-2 py-1">Email</th><th className="border-b px-2 py-1">Role</th><th className="border-b px-2 py-1">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id}>
+                    <td className="border-b px-2 py-1">{user.name}</td>
+                    <td className="border-b px-2 py-1">{user.email}</td>
+                    <td className="border-b px-2 py-1">{user.role}</td>
+                    <td className="border-b px-2 py-1"><Link className="text-blue-600 hover:underline" href={`/admin/users/${user.id}`}>Manage user</Link></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : <p className="text-sm text-muted-foreground">No users.</p>}
+      </section>
+
       <AdminTable title="Activities" headers={["Title", "Author", "Public", "Category", "Age Group"]} rows={activities.map((activity) => [activity.title, activity.author.name, activity.isPublic ? "Yes" : "No", activity.category, activity.ageGroup])} />
       <AdminTable title="Plans" headers={["Title", "Type", "Visibility", "Owner", "Shared users"]} rows={plans.map((plan) => [plan.title, plan.type, plan.visibility, plan.author.name, String(plan.shares.length)])} />
       <AdminTable title="Comments" headers={["Comment", "Author", "Activity"]} rows={comments.map((comment) => [comment.content, comment.author.name, comment.activity.title])} />
@@ -40,27 +65,11 @@ function AdminTable({ title, headers, rows }: { title: string; headers: string[]
       {rows.length ? (
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
-            <thead>
-              <tr>
-                {headers.map((header) => (
-                  <th key={header} className="border-b px-2 py-1">{header}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, rowIndex) => (
-                <tr key={rowIndex}>
-                  {row.map((cell, cellIndex) => (
-                    <td key={`${rowIndex}-${cellIndex}`} className="border-b px-2 py-1">{cell}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
+            <thead><tr>{headers.map((header) => (<th key={header} className="border-b px-2 py-1">{header}</th>))}</tr></thead>
+            <tbody>{rows.map((row, rowIndex) => (<tr key={rowIndex}>{row.map((cell, cellIndex) => (<td key={`${rowIndex}-${cellIndex}`} className="border-b px-2 py-1">{cell}</td>))}</tr>))}</tbody>
           </table>
         </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">No data.</p>
-      )}
+      ) : (<p className="text-sm text-muted-foreground">No data.</p>)}
     </section>
   );
 }
