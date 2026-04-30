@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
+import { useLanguage } from "@/components/layout/language-provider";
 import { Button } from "@/components/ui/button";
 import {
   AGE_GROUP_OPTIONS,
@@ -76,6 +77,8 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
   const [values, setValues] = useState<ActivityFormValues>({ ...DEFAULT_VALUES, ...initialValues });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const endpoint = useMemo(() => {
     return mode === "create" ? "/api/activities" : `/api/activities/${activityId}`;
@@ -106,10 +109,11 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
 
     const parsed = activityInputSchema.safeParse(payload);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Please check the form fields.");
+      setError(parsed.error.issues[0]?.message ?? t("message.validation.checkFields"));
       return;
     }
 
+    setSuccess(null);
     setIsSubmitting(true);
 
     const response = await fetch(endpoint, {
@@ -125,16 +129,17 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
     setIsSubmitting(false);
 
     if (!response.ok) {
-      setError(data.error ?? "Something went wrong while saving this activity.");
+      setError(data.error ?? t("message.error.generic"));
       return;
     }
 
     const id = data.data?.id;
     if (!id) {
-      setError("Activity saved, but redirect failed.");
+      setError(t("message.error.generic"));
       return;
     }
 
+    setSuccess(t("message.success.saved"));
     router.push(`/activities/${id}`);
     router.refresh();
   }
@@ -142,10 +147,10 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
   return (
     <form onSubmit={onSubmit} className="space-y-4 rounded-lg border bg-background p-4 sm:p-6">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Title" required helpText="At least 3 characters. Use a clear teacher-facing name.">
+        <Field label={t("activity.form.title")} required helpText="At least 3 characters. Use a clear teacher-facing name.">
           <input className="w-full rounded-md border px-3 py-2 text-sm" minLength={3} value={values.title} onChange={(event) => setValues((prev) => ({ ...prev, title: event.target.value }))} required />
         </Field>
-        <Field label="Age group" required helpText="Choose the primary developmental age this activity targets.">
+        <Field label={t("activity.form.ageGroup")} required helpText="Choose the primary developmental age this activity targets.">
           <select className="w-full rounded-md border px-3 py-2 text-sm" value={values.ageGroup} onChange={(event) => setValues((prev) => ({ ...prev, ageGroup: event.target.value }))} required>
             <option value="" disabled>Select age group</option>
             {AGE_GROUP_OPTIONS.map((ageGroup) => <option key={ageGroup} value={ageGroup}>{ageGroup}</option>)}
@@ -153,7 +158,7 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
         </Field>
       </div>
 
-      <Field label="Summary" required helpText="At least 10 characters. 1-2 sentences to help teachers quickly understand the activity.">
+      <Field label={t("activity.form.summary")} required helpText="At least 10 characters. 1-2 sentences to help teachers quickly understand the activity.">
         <textarea className="min-h-20 w-full rounded-md border px-3 py-2 text-sm" minLength={10} value={values.summary} onChange={(event) => setValues((prev) => ({ ...prev, summary: event.target.value }))} required />
       </Field>
 
@@ -184,7 +189,7 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
         </Field>
       </div>
 
-      <Field label="Learning goal" required helpText="At least 10 characters. Main learning outcome children should achieve.">
+      <Field label={t("activity.form.goal")} required helpText={t("activity.form.goalHelp")}>
         <textarea className="min-h-20 w-full rounded-md border px-3 py-2 text-sm" minLength={10} value={values.goal} onChange={(event) => setValues((prev) => ({ ...prev, goal: event.target.value }))} required />
       </Field>
 
@@ -196,11 +201,11 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
         <textarea className="min-h-24 w-full rounded-md border px-3 py-2 text-sm" value={values.objectives} onChange={(event) => setValues((prev) => ({ ...prev, objectives: event.target.value }))} />
       </Field>
 
-      <Field label="Activity steps (one per line)" helpText="Ordered facilitation steps for the teacher.">
+      <Field label={t("activity.form.steps")} helpText={t("activity.form.stepsHelp")}>
         <textarea className="min-h-24 w-full rounded-md border px-3 py-2 text-sm" value={values.steps} onChange={(event) => setValues((prev) => ({ ...prev, steps: event.target.value }))} />
       </Field>
 
-      <Field label="Materials needed (one per line)">
+      <Field label={t("activity.form.materials")} helpText={t("activity.form.materialsHelp")}>
         <textarea className="min-h-24 w-full rounded-md border px-3 py-2 text-sm" value={values.materialsNeeded} onChange={(event) => setValues((prev) => ({ ...prev, materialsNeeded: event.target.value }))} />
       </Field>
 
@@ -226,9 +231,10 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
       </label>
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {success ? <p className="text-sm text-green-600">{success}</p> : null}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Saving..." : mode === "create" ? "Create activity" : "Save changes"}
+        {isSubmitting ? t("button.saving") : mode === "create" ? `${t("button.add")} activity` : t("button.save")}
       </Button>
     </form>
   );

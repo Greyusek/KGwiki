@@ -1,12 +1,14 @@
 import Link from "next/link";
 
 import { LogoutForm } from "@/components/auth/logout-form";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { NavLabel } from "@/components/layout/nav-label";
 import { auth } from "@/lib/auth";
 
 const publicRoutes = [
-  { href: "/", label: "Home" },
-  { href: "/activities", label: "Activities" },
-  { href: "/plans", label: "Plans" }
+  { href: "/", key: "nav.home" },
+  { href: "/activities", key: "nav.activities" },
+  { href: "/plans", key: "nav.plans" }
 ];
 
 export async function TopNav() {
@@ -23,7 +25,7 @@ export async function TopNav() {
           {publicRoutes.map((route) => (
             <li key={route.href}>
               <Link href={route.href} className="transition-colors hover:text-foreground">
-                {route.label}
+                <NavLabel tKey={route.key} />
               </Link>
             </li>
           ))}
@@ -32,18 +34,18 @@ export async function TopNav() {
             <>
               <li>
                 <Link href="/activities/mine" className="transition-colors hover:text-foreground">
-                  My Activities
+                  <NavLabel tKey="nav.myActivities" />
                 </Link>
               </li>
               <li>
                 <Link href="/profile" className="transition-colors hover:text-foreground">
-                  Profile
+                  <NavLabel tKey="nav.profile" />
                 </Link>
               </li>
               {isAdmin ? (
                 <li>
                   <Link href="/admin" className="transition-colors hover:text-foreground">
-                    Admin
+                    <NavLabel tKey="nav.admin" />
                   </Link>
                 </li>
               ) : null}
@@ -55,16 +57,19 @@ export async function TopNav() {
             <>
               <li>
                 <Link href="/login" className="transition-colors hover:text-foreground">
-                  Login
+                  <NavLabel tKey="nav.login" />
                 </Link>
               </li>
               <li>
                 <Link href="/register" className="transition-colors hover:text-foreground">
-                  Register
+                  <NavLabel tKey="nav.register" />
                 </Link>
               </li>
             </>
           )}
+          <li>
+            <LanguageSwitcher />
+          </li>
         </ul>
       </nav>
     </header>
