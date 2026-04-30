@@ -147,12 +147,12 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
   return (
     <form onSubmit={onSubmit} className="space-y-4 rounded-lg border bg-background p-4 sm:p-6">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t("activity.form.title")} required helpText="At least 3 characters. Use a clear teacher-facing name.">
+        <Field label={t("activity.form.title")} required helpText={t("activity.form.titleHelp")}>
           <input className="w-full rounded-md border px-3 py-2 text-sm" minLength={3} value={values.title} onChange={(event) => setValues((prev) => ({ ...prev, title: event.target.value }))} required />
         </Field>
-        <Field label={t("activity.form.ageGroup")} required helpText="Choose the primary developmental age this activity targets.">
+        <Field label={t("activity.form.ageGroup")} required helpText={t("activity.form.ageGroupHelp")}>
           <select className="w-full rounded-md border px-3 py-2 text-sm" value={values.ageGroup} onChange={(event) => setValues((prev) => ({ ...prev, ageGroup: event.target.value }))} required>
-            <option value="" disabled>Select age group</option>
+            <option value="" disabled>{t("activity.form.ageGroupPlaceholder")}</option>
             {AGE_GROUP_OPTIONS.map((ageGroup) => <option key={ageGroup} value={ageGroup}>{ageGroup}</option>)}
           </select>
         </Field>
@@ -163,27 +163,27 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Duration (minutes)" required>
+        <Field label={t("activity.form.duration")} required helpText={t("activity.form.durationHelp")}>
           <input type="number" min={5} max={1440} className="w-full rounded-md border px-3 py-2 text-sm" value={values.durationMinutes} onChange={(event) => setValues((prev) => ({ ...prev, durationMinutes: event.target.value }))} required />
         </Field>
-        <Field label="Category" required helpText="Select the main subject/format for discovery and filtering.">
+        <Field label={t("activity.form.category")} required helpText={t("activity.form.categoryHelp")}>
           <select className="w-full rounded-md border px-3 py-2 text-sm" value={values.category} onChange={(event) => setValues((prev) => ({ ...prev, category: event.target.value }))} required>
-            <option value="" disabled>Select category</option>
+            <option value="" disabled>{t("activity.form.categoryPlaceholder")}</option>
             {CATEGORY_OPTIONS.map((category) => <option key={category} value={category}>{category}</option>)}
           </select>
         </Field>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Location type" required helpText="Where this works best in preschool settings.">
+        <Field label={t("activity.form.locationType")} required helpText={t("activity.form.locationTypeHelp")}>
           <select className="w-full rounded-md border px-3 py-2 text-sm" value={values.locationType} onChange={(event) => setValues((prev) => ({ ...prev, locationType: event.target.value }))} required>
-            <option value="" disabled>Select location type</option>
+            <option value="" disabled>{t("activity.form.locationTypePlaceholder")}</option>
             {LOCATION_TYPE_OPTIONS.map((locationType) => <option key={locationType} value={locationType}>{locationType}</option>)}
           </select>
         </Field>
-        <Field label="Complexity level" required helpText="Estimate prep/facilitation complexity for teachers.">
+        <Field label={t("activity.form.complexityLevel")} required helpText={t("activity.form.complexityHelp")}>
           <select className="w-full rounded-md border px-3 py-2 text-sm" value={values.complexityLevel} onChange={(event) => setValues((prev) => ({ ...prev, complexityLevel: event.target.value }))} required>
-            <option value="" disabled>Select complexity</option>
+            <option value="" disabled>{t("activity.form.complexityPlaceholder")}</option>
             {COMPLEXITY_OPTIONS.map((complexityLevel) => <option key={complexityLevel} value={complexityLevel}>{complexityLevel}</option>)}
           </select>
         </Field>
@@ -227,14 +227,14 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
 
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={values.isPublic} onChange={(event) => setValues((prev) => ({ ...prev, isPublic: event.target.checked }))} />
-        Make this activity visible in the public catalog
+        {t("activity.form.public")}
       </label>
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       {success ? <p className="text-sm text-green-600">{success}</p> : null}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? t("button.saving") : mode === "create" ? `${t("button.add")} activity` : t("button.save")}
+        {isSubmitting ? t("button.saving") : mode === "create" ? t("activity.form.addActivity") : t("button.save")}
       </Button>
     </form>
   );
