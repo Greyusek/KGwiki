@@ -256,9 +256,9 @@ export function PlanForm({
         <label className="space-y-1 text-sm">
           <span className="font-medium">{t("plan.form.visibility")}</span>
           <select className="w-full rounded-md border px-3 py-2" value={visibility} onChange={(event) => setVisibility(event.target.value as "private" | "public" | "shared")}>
-            <option value="private">Private</option>
-            <option value="public">Public</option>
-            <option value="shared">Shared</option>
+            <option value="private">{t("plan.form.private")}</option>
+            <option value="public">{t("plan.form.public")}</option>
+            <option value="shared">{t("plan.form.shared")}</option>
           </select>
         </label>
         {visibility === "shared" ? (
@@ -327,11 +327,11 @@ export function PlanForm({
                   <textarea className="w-full rounded-md border px-3 py-2" value={item.notes} onChange={(event) => updateItem(index, { notes: event.target.value })} />
                 </label>
                 <div className="sm:col-span-2">
-                  <Button type="button" variant="ghost" onClick={() => setItems((prev) => prev.length > 1 ? prev.filter((_, i) => i !== index) : [createEmptyPlanItem(activities)])}>Remove activity</Button>
+                  <Button type="button" variant="ghost" onClick={() => setItems((prev) => prev.length > 1 ? prev.filter((_, i) => i !== index) : [createEmptyPlanItem(activities)])}>{t("button.remove")} activity</Button>
                 </div>
               </div>
             ))}
-            <Button type="button" variant="outline" onClick={() => setItems((prev) => [...prev, { activityId: activities[0]?.id ?? "", notes: "", plannedTime: "" }])}>Add activity</Button>
+            <Button type="button" variant="outline" onClick={() => setItems((prev) => [...prev, { activityId: activities[0]?.id ?? "", notes: "", plannedTime: "" }])}>{t("button.add")} activity</Button>
           </div>
         </>
       ) : (
@@ -398,7 +398,7 @@ export function PlanForm({
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       {success ? <p className="text-sm text-green-600">{success}</p> : null}
-      <Button type="submit" disabled={busy}>{busy ? "Saving..." : "Save plan"}</Button>
+      <Button type="submit" disabled={busy}>{busy ? t("button.saving") : t("plan.form.save")}</Button>
     </form>
   );
 }
