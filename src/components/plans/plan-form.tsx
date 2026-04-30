@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
+import { useLanguage } from "@/components/layout/language-provider";
 import { Button } from "@/components/ui/button";
 
 type ActivityOption = { id: string; title: string };
@@ -76,6 +77,8 @@ export function PlanForm({
   const [results, setResults] = useState<ShareUserOption[]>([]);
   const [searching, setSearching] = useState(false);
   const [availableDayPlans, setAvailableDayPlans] = useState<DayPlanOption[]>(dayPlans);
+  const [success, setSuccess] = useState<string | null>(null);
+  const { t } = useLanguage();
   const [weekDays, setWeekDays] = useState<WeekDayInput[]>(
     initial?.weekDays.length
       ? initial.weekDays.map((entry) => ({ ...entry, inlineTitle: entry.inlineTitle ?? "" }))
@@ -159,16 +162,16 @@ export function PlanForm({
 
   async function saveInlineDay(day: WeekDayInput) {
     const titleValue = day.inlineTitle.trim();
-    if (!titleValue) { setError("Day plan title is required."); return; }
-    if (day.inlineItems.length < 1) { setError("Add at least one activity before saving as day plan."); return; }
+    if (!titleValue) { setError(t("message.validation.checkFields")); return; }
+    if (day.inlineItems.length < 1) { setError(t("message.validation.checkFields")); return; }
     setBusy(true); setError(null);
     try {
       const response = await fetch("/api/plans/day-plans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: titleValue, items: day.inlineItems.map((item, index) => ({ activityId: item.activityId, orderIndex: index, notes: item.notes || null, plannedTime: item.plannedTime || null })) }) });
       const data = await response.json() as { error?: string; data?: DayPlanOption };
-      if (!response.ok || !data.data) { setError(data.error ?? "Failed to save inline day plan."); return; }
+      if (!response.ok || !data.data) { setError(data.error ?? t("message.error.generic")); return; }
       setAvailableDayPlans((prev) => [data.data!, ...prev.filter((plan) => plan.id !== data.data!.id)]);
       setWeekDays((prev) => prev.map((entry) => entry.dayIndex !== day.dayIndex ? entry : { ...entry, mode: "attach", attachedDayPlanId: data.data!.id, inlineTitle: "", inlineItems: [createEmptyPlanItem(activities)] }));
-    } catch { setError("Request failed. Please try again."); }
+    } catch { setError(t("message.error.generic")); }
     finally { setBusy(false); }
   }
 
@@ -218,14 +221,15 @@ export function PlanForm({
       const data = (await response.json()) as { error?: string; data?: { id: string } };
 
       if (!response.ok) {
-        setError(data.error ?? "Failed to save plan.");
+        setError(data.error ?? t("message.error.generic"));
         return;
       }
 
+      setSuccess(t("message.success.saved"));
       router.push(planId ? `/plans/${planId}` : `/plans/${data.data?.id ?? ""}`);
       router.refresh();
     } catch {
-      setError("Request failed. Please try again.");
+      setError(t("message.error.generic"));
     } finally {
       setBusy(false);
     }
@@ -235,22 +239,22 @@ export function PlanForm({
     <form className="space-y-4 rounded-lg border p-4" onSubmit={onSubmit}>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="space-y-1 text-sm">
-          <span className="font-medium">Plan type</span>
+          <span className="font-medium">{t("plan.form.type")}</span>
           <p className="text-xs text-muted-foreground">Day template is a reusable schedule made from activities. Week template is a reusable set of day templates.</p>
           <select className="w-full rounded-md border px-3 py-2" value={type} onChange={(event) => setType(event.target.value as "day" | "week")}>
-            <option value="day">Day</option>
-            <option value="week">Week</option>
+            <option value="day">{t("plan.form.day")}</option>
+            <option value="week">{t("plan.form.week")}</option>
           </select>
         </label>
         <label className="space-y-1 text-sm">
-          <span className="font-medium">Title</span>
-          <p className="text-xs text-muted-foreground">Use a concise plan name (minimum 2 characters).</p>
+          <span className="font-medium">{t("plan.form.title")}</span>
+          <p className="text-xs text-muted-foreground">{t("plan.form.titleHelp")}</p>
           <input className="w-full rounded-md border px-3 py-2" value={title} onChange={(event) => setTitle(event.target.value)} required />
         </label>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="space-y-1 text-sm">
-          <span className="font-medium">Visibility</span>
+          <span className="font-medium">{t("plan.form.visibility")}</span>
           <select className="w-full rounded-md border px-3 py-2" value={visibility} onChange={(event) => setVisibility(event.target.value as "private" | "public" | "shared")}>
             <option value="private">Private</option>
             <option value="public">Public</option>
@@ -393,6 +397,7 @@ export function PlanForm({
       )}
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {success ? <p className="text-sm text-green-600">{success}</p> : null}
       <Button type="submit" disabled={busy}>{busy ? "Saving..." : "Save plan"}</Button>
     </form>
   );

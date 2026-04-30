@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import "./globals.css";
 
+import { LanguageProvider } from "@/components/layout/language-provider";
 import { TopNav } from "@/components/layout/top-nav";
 
 export const metadata: Metadata = {
@@ -13,10 +14,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body>
-        <div className="min-h-screen bg-muted/30">
+        <LanguageProvider><div className="min-h-screen bg-muted/30">
           <TopNav />
           <main className="mx-auto max-w-5xl px-4 py-10">{children}</main>
-        </div>
+        </div></LanguageProvider>
       </body>
     </html>
   );

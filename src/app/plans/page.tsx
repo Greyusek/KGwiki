@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { TText } from "@/components/layout/t-text";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 import { listPlans } from "@/services/plan-service";
@@ -73,7 +74,7 @@ export default async function PlansPage({
             </li>
           ))}
         </ul>
-      ) : <p className="text-sm text-muted-foreground">No plans found.</p>}
+      ) : <p className="text-sm text-muted-foreground"><TText tKey="empty.plans" /></p>}
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <p>Page {page} of {totalPages} ({total} total)</p>

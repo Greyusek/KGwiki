@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 
 import { ActivityCard } from "@/components/activities/activity-card";
+import { TText } from "@/components/layout/t-text";
 import {
   AGE_GROUP_OPTIONS,
   CATEGORY_OPTIONS,
@@ -64,7 +65,7 @@ export default async function ActivitiesPage({
 
       {activities.length === 0 ? (
         <p className="rounded-lg border bg-background p-4 text-sm text-muted-foreground">
-          No public activities yet.
+          <TText tKey="empty.activities" />
         </p>
       ) : (
         <div className="grid gap-4">
