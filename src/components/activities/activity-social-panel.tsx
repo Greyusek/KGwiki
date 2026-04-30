@@ -304,8 +304,10 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
                       </Button>
                     </form>
                     <form className="space-y-2" onSubmit={(event)=>{event.preventDefault(); const formData=new FormData(event.currentTarget); runAction(`media-link-${entry.id}`, async()=>{await submitJson(`/api/feedback/${entry.id}/media`,"POST",{title:String(formData.get("title")||""), externalUrl:String(formData.get("externalUrl")||""), description:String(formData.get("description")||"")}); (event.currentTarget as HTMLFormElement).reset();});}}><input name="title" placeholder="Link title" className="w-full rounded-md border px-2 py-1 text-xs" required/><input name="externalUrl" placeholder="https://..." className="w-full rounded-md border px-2 py-1 text-xs" required/><input name="description" placeholder="Description (optional)" className="w-full rounded-md border px-2 py-1 text-xs"/><Button size="sm" type="submit">Add link</Button></form>
-                    <button
-                      className="text-xs text-red-600 hover:underline"
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
                       onClick={() =>
                         runAction(`feedback-delete-${entry.id}`, async () => {
                           const response = await fetch(`/api/feedback/${entry.id}`, { method: "DELETE" });
@@ -316,8 +318,8 @@ export function ActivitySocialPanel({ activity, currentUser, canCopy }: Props) {
                         })
                       }
                     >
-                      Delete feedback
-                    </button>
+                      🗑 Delete feedback
+                    </Button>
                   </div>
                 ) : null}
               </article>
