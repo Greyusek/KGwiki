@@ -158,7 +158,7 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
         </Field>
       </div>
 
-      <Field label={t("activity.form.summary")} required helpText="At least 10 characters. 1-2 sentences to help teachers quickly understand the activity.">
+      <Field label={t("activity.form.summary")} required helpText={t("activity.form.summaryHelp")}>
         <textarea className="min-h-20 w-full rounded-md border px-3 py-2 text-sm" minLength={10} value={values.summary} onChange={(event) => setValues((prev) => ({ ...prev, summary: event.target.value }))} required />
       </Field>
 
@@ -193,11 +193,11 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
         <textarea className="min-h-20 w-full rounded-md border px-3 py-2 text-sm" minLength={10} value={values.goal} onChange={(event) => setValues((prev) => ({ ...prev, goal: event.target.value }))} required />
       </Field>
 
-      <Field label="Context and setup" required helpText="At least 20 characters. Describe setup, class context, and how to prepare before starting.">
+      <Field label={t("activity.form.contextSetup")} required helpText={t("activity.form.contextSetupHelp")}>
         <textarea className="min-h-24 w-full rounded-md border px-3 py-2 text-sm" minLength={20} value={values.description} onChange={(event) => setValues((prev) => ({ ...prev, description: event.target.value }))} required />
       </Field>
 
-      <Field label="Specific objectives (one per line)" helpText="Break the learning goal into measurable child outcomes.">
+      <Field label={t("activity.form.objectives")} helpText={t("activity.form.objectivesHelp")}>
         <textarea className="min-h-24 w-full rounded-md border px-3 py-2 text-sm" value={values.objectives} onChange={(event) => setValues((prev) => ({ ...prev, objectives: event.target.value }))} />
       </Field>
 
@@ -210,18 +210,18 @@ export function ActivityForm({ mode, activityId, initialValues }: ActivityFormPr
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Tags (comma separated)" helpText="Up to 10 tags for quick search keywords.">
+        <Field label={t("activity.form.tags")} helpText={t("activity.form.tagsHelp")}>
           <input className="w-full rounded-md border px-3 py-2 text-sm" value={values.tags} onChange={(event) => setValues((prev) => ({ ...prev, tags: event.target.value }))} />
         </Field>
-        <Field label="Season">
+        <Field label={t("activity.form.season")}>
           <select className="w-full rounded-md border px-3 py-2 text-sm" value={values.season} onChange={(event) => setValues((prev) => ({ ...prev, season: event.target.value }))}>
-            <option value="">Not season-specific</option>
+            <option value="">{t("activity.form.seasonPlaceholder")}</option>
             {SEASON_OPTIONS.map((season) => <option key={season} value={season}>{season}</option>)}
           </select>
         </Field>
       </div>
 
-      <Field label="Holiday links (one per line)">
+      <Field label={t("activity.form.holidayLinks")}>
         <textarea className="min-h-20 w-full rounded-md border px-3 py-2 text-sm" value={values.holidayLinks} onChange={(event) => setValues((prev) => ({ ...prev, holidayLinks: event.target.value }))} />
       </Field>
 

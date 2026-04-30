@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { useLanguage } from "@/components/layout/language-provider";
 import { Button } from "@/components/ui/button";
 
 type DayPlanOption = { id: string; title: string };
@@ -13,6 +14,7 @@ export function AddToDayPlanButton({ activityId, className }: { activityId: stri
   const [plannedTime, setPlannedTime] = useState("");
   const [notes, setNotes] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!open) return;
@@ -40,16 +42,16 @@ export function AddToDayPlanButton({ activityId, className }: { activityId: stri
     });
     const data = (await response.json()) as { error?: string };
     if (!response.ok) {
-      setMessage(data.error ?? "Unable to add activity.");
+      setMessage(data.error ?? t("plan.addToDay.error"));
       return;
     }
-    setMessage("Added to day plan.");
+    setMessage(t("plan.addToDay.success"));
   }
 
   if (!open) {
     return (
       <Button variant="outline" className={className} onClick={() => setOpen(true)}>
-        Add to day plan
+        {t("plan.addToDay.open")}
       </Button>
     );
   }
@@ -57,7 +59,7 @@ export function AddToDayPlanButton({ activityId, className }: { activityId: stri
   return (
     <div className="space-y-2 rounded-md border p-3 text-sm">
       <label className="block">
-        <span className="font-medium">Day plan</span>
+        <span className="font-medium">{t("plan.addToDay.dayPlan")}</span>
         <select className="mt-1 w-full rounded border px-2 py-1" value={dayPlanId} onChange={(event) => setDayPlanId(event.target.value)}>
           {plans.map((plan) => (
             <option value={plan.id} key={plan.id}>
@@ -67,17 +69,17 @@ export function AddToDayPlanButton({ activityId, className }: { activityId: stri
         </select>
       </label>
       <label className="block">
-        <span className="font-medium">Planned time (optional)</span>
+        <span className="font-medium">{t("plan.form.plannedTimeOptional")}</span>
         <input type="time" className="mt-1 w-full rounded border px-2 py-1" value={plannedTime} onChange={(event) => setPlannedTime(event.target.value)} />
       </label>
       <label className="block">
-        <span className="font-medium">Notes (optional)</span>
+        <span className="font-medium">{t("plan.form.notesOptional")}</span>
         <textarea className="mt-1 w-full rounded border px-2 py-1" value={notes} onChange={(event) => setNotes(event.target.value)} />
       </label>
       {message ? <p className="text-xs text-muted-foreground">{message}</p> : null}
       <div className="flex gap-2">
-        <Button size="sm" onClick={submit} disabled={!dayPlanId}>Save</Button>
-        <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Close</Button>
+        <Button size="sm" onClick={submit} disabled={!dayPlanId}>{t("button.save")}</Button>
+        <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>{t("button.close")}</Button>
       </div>
     </div>
   );

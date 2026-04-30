@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { useLanguage } from "@/components/layout/language-provider";
 import { Button } from "@/components/ui/button";
 
 export function ProfileForm({ initial }: { initial: { name: string; avatar: string; bio: string } }) {
@@ -12,6 +13,7 @@ export function ProfileForm({ initial }: { initial: { name: string; avatar: stri
   const [bio, setBio] = useState(initial.bio);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { t } = useLanguage();
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -26,7 +28,7 @@ export function ProfileForm({ initial }: { initial: { name: string; avatar: stri
 
     const data = (await response.json()) as { error?: string };
     if (!response.ok) {
-      setError(data.error ?? "Update failed.");
+      setError(data.error ?? t("profile.updateFailed"));
       setBusy(false);
       return;
     }
@@ -37,21 +39,21 @@ export function ProfileForm({ initial }: { initial: { name: string; avatar: stri
 
   return (
     <form className="space-y-3 rounded-lg border p-4" onSubmit={onSubmit}>
-      <h2 className="font-semibold">Edit profile</h2>
+      <h2 className="font-semibold">{t("profile.editTitle")}</h2>
       <label className="block space-y-1 text-sm">
-        <span className="font-medium">Name</span>
+        <span className="font-medium">{t("profile.name")}</span>
         <input className="w-full rounded-md border px-3 py-2" value={name} onChange={(event) => setName(event.target.value)} required />
       </label>
       <label className="block space-y-1 text-sm">
-        <span className="font-medium">Avatar URL (optional)</span>
+        <span className="font-medium">{t("profile.avatarOptional")}</span>
         <input className="w-full rounded-md border px-3 py-2" value={avatar} onChange={(event) => setAvatar(event.target.value)} />
       </label>
       <label className="block space-y-1 text-sm">
-        <span className="font-medium">Bio (optional)</span>
+        <span className="font-medium">{t("profile.bioOptional")}</span>
         <textarea className="w-full rounded-md border px-3 py-2" value={bio} onChange={(event) => setBio(event.target.value)} />
       </label>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
-      <Button type="submit" disabled={busy}>{busy ? "Saving..." : "Save profile"}</Button>
+      <Button type="submit" disabled={busy}>{busy ? t("button.saving") : t("profile.save")}</Button>
     </form>
   );
 }
