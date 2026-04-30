@@ -209,3 +209,24 @@ Plans support three visibility modes:
 
 Only author or admin can edit/delete a plan regardless of visibility. Shared/public access is read-only.
 
+
+## Password management
+
+Password management currently supports in-app password updates only (no email-based reset flow for end-users in this sprint).
+
+- **Admin reset password**
+  1. Sign in as an admin.
+  2. Open `/admin` and click **Manage user** for a target account.
+  3. In **Reset password**, enter new password + confirmation.
+  4. Click **Set new password**.
+
+- **User change own password**
+  1. Sign in as any user.
+  2. Open `/profile`.
+  3. In **Change password**, provide current password, new password, and confirmation.
+  4. Click **Update password**.
+
+Notes:
+- Passwords are always hashed before DB write.
+- Admin reset is role-protected server-side.
+- Email/SMPP/SMTP-based recovery is not implemented in this sprint.
