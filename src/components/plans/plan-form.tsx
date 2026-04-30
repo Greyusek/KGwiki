@@ -1,13 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
 type ActivityOption = { id: string; title: string };
 type DayPlanOption = { id: string; title: string };
-type ShareUserOption = { id: string; name: string };
+type ShareUserOption = { id: string; name: string | null; email: string };
 
 type PlanItemInput = {
   activityId: string;
@@ -42,7 +42,7 @@ export function PlanForm({
   dayPlans,
   initial,
   planId,
-  shareUsers
+  initialShareUsers
 }: {
   activities: ActivityOption[];
   dayPlans: DayPlanOption[];
@@ -56,7 +56,7 @@ export function PlanForm({
     weekDays: WeekDayInput[];
   };
   planId?: string;
-  shareUsers: ShareUserOption[];
+  initialShareUsers: ShareUserOption[];
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +69,12 @@ export function PlanForm({
   const [workingDays, setWorkingDays] = useState<number>(initial?.workingDays ?? 5);
   const [visibility, setVisibility] = useState<"private" | "public" | "shared">(initial?.visibility ?? "private");
   const [sharedUserIds, setSharedUserIds] = useState<string[]>(initial?.sharedUserIds ?? []);
+  const [selectedSharedUsers, setSelectedSharedUsers] = useState<ShareUserOption[]>(
+    initialShareUsers.filter((user) => (initial?.sharedUserIds ?? []).includes(user.id))
+  );
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<ShareUserOption[]>([]);
+  const [searching, setSearching] = useState(false);
   const [availableDayPlans, setAvailableDayPlans] = useState<DayPlanOption[]>(dayPlans);
   const [weekDays, setWeekDays] = useState<WeekDayInput[]>(
     initial?.weekDays.length
@@ -82,6 +88,48 @@ export function PlanForm({
       .filter((day) => day.dayIndex < workingDays),
     [weekDays, workingDays]
   );
+  const selectedUserSet = useMemo(() => new Set(sharedUserIds), [sharedUserIds]);
+
+  useEffect(() => {
+    const normalizedQuery = query.trim();
+    if (visibility !== "shared") return;
+    if (normalizedQuery.length < 2) {
+      setResults([]);
+      return;
+    }
+
+    const timeout = window.setTimeout(async () => {
+      setSearching(true);
+      try {
+        const response = await fetch(`/api/users/search?q=${encodeURIComponent(normalizedQuery)}&limit=10`);
+        const data = await response.json() as { data?: ShareUserOption[] };
+        if (!response.ok || !data.data) {
+          setResults([]);
+          return;
+        }
+        setResults(data.data.filter((user) => !selectedUserSet.has(user.id)));
+      } catch {
+        setResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [query, visibility, selectedUserSet]);
+
+  function addSharedUser(user: ShareUserOption) {
+    if (selectedUserSet.has(user.id)) return;
+    setSharedUserIds((prev) => [...prev, user.id]);
+    setSelectedSharedUsers((prev) => [...prev, user]);
+    setQuery("");
+    setResults([]);
+  }
+
+  function removeSharedUser(userId: string) {
+    setSharedUserIds((prev) => prev.filter((id) => id !== userId));
+    setSelectedSharedUsers((prev) => prev.filter((user) => user.id !== userId));
+  }
 
   function updateItem(index: number, updates: Partial<PlanItemInput>) {
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...updates } : item)));
@@ -212,12 +260,39 @@ export function PlanForm({
         {visibility === "shared" ? (
           <fieldset className="space-y-1 text-sm">
             <legend className="font-medium">Shared with users</legend>
-            <div className="max-h-28 overflow-auto rounded border p-2">
-              {shareUsers.map((user) => (
-                <label key={user.id} className="flex items-center gap-2">
-                  <input type="checkbox" checked={sharedUserIds.includes(user.id)} onChange={(event) => setSharedUserIds((prev) => event.target.checked ? [...prev, user.id] : prev.filter((id) => id !== user.id))} />
-                  <span>{user.name}</span>
-                </label>
+            <label htmlFor="shared-users-search" className="font-medium">
+              Search users
+            </label>
+            <input
+              id="shared-users-search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              className="w-full rounded-md border px-3 py-2"
+              placeholder="Search users by name or email"
+            />
+            <div className="min-h-6 text-xs text-muted-foreground">
+              {query.trim().length < 2 ? "Type at least 2 characters to search users." : null}
+              {query.trim().length >= 2 && !searching && results.length === 0 ? "No users found" : null}
+            </div>
+            <div className="max-h-40 overflow-auto rounded-md border" role="listbox" aria-label="User search results">
+              {results.map((user) => (
+                <button
+                  key={user.id}
+                  type="button"
+                  className="flex w-full items-start justify-between border-b px-3 py-2 text-left last:border-b-0 hover:bg-muted"
+                  onClick={() => addSharedUser(user)}
+                >
+                  <span className="font-medium">{user.name ?? user.email}</span>
+                  <span className="text-xs text-muted-foreground">{user.email}</span>
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {selectedSharedUsers.map((user) => (
+                <span key={user.id} className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-xs">
+                  <span>{user.name ?? user.email}</span>
+                  <button type="button" aria-label={`Remove ${user.name ?? user.email}`} onClick={() => removeSharedUser(user.id)}>×</button>
+                </span>
               ))}
             </div>
           </fieldset>
