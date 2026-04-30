@@ -17,7 +17,7 @@ export default async function NewPlanPage() {
     orderBy: { title: "asc" }
   });
   const dayPlans = await listDayPlansForUser({ id: session.user.id, role: session.user.role });
-  const users = await prisma.user.findMany({ where: { id: { not: session.user.id } }, select: { id: true, name: true }, orderBy: { name: "asc" } });
+  const users = await prisma.user.findMany({ where: { id: { not: session.user.id } }, select: { id: true, name: true, email: true }, orderBy: { name: "asc" } });
 
   if (!activities.length) {
     return (
@@ -31,7 +31,7 @@ export default async function NewPlanPage() {
   return (
     <section className="space-y-3">
       <h1 className="text-2xl font-semibold">Create plan</h1>
-      <PlanForm activities={activities} dayPlans={dayPlans.map((plan) => ({ id: plan.id, title: plan.title }))} shareUsers={users} />
+      <PlanForm activities={activities} dayPlans={dayPlans.map((plan) => ({ id: plan.id, title: plan.title }))} initialShareUsers={users} />
     </section>
   );
 }
