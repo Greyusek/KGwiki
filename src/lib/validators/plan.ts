@@ -13,14 +13,11 @@ const createInlineDaySchema = z.object({
 
 const weekDaySchema = z.object({
   dayIndex: z.number().int().min(0),
-  inlineTitle: z.string().trim().max(120),
+  inlineTitle: z.string().trim().max(120).optional().nullable(),
   attachedDayPlanId: z.string().min(1).optional().nullable(),
   inlineDayPlan: createInlineDaySchema.optional().nullable()
 }).refine((value) => Boolean(value.attachedDayPlanId) !== Boolean(value.inlineDayPlan), {
   message: "Each week day must either attach a day plan or define an inline day plan."
-}).refine((value) => (value.inlineDayPlan ? value.inlineTitle.trim().length >= 2 : true), {
-  message: "Inline days require a title.",
-  path: ["inlineTitle"]
 });
 
 export const planSchema = z
