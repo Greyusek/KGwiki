@@ -10,7 +10,6 @@ const { prismaMock } = vi.hoisted(() => ({
       deleteMany: vi.fn(),
       count: vi.fn()
     },
-    planShare: { deleteMany: vi.fn() },
     weekPlanDay: {
       findMany: vi.fn(),
       deleteMany: vi.fn(),
@@ -55,6 +54,8 @@ describe("plan-service", () => {
     await createPlan({
       type: "day",
       title: "Day Template",
+      visibility: "private",
+      sharedUserIds: [],
       items: [{ activityId: "a1", orderIndex: 0, plannedTime: "09:00", notes: null }]
     }, { id: "u1", role: "user" });
 
@@ -69,6 +70,8 @@ describe("plan-service", () => {
     await createPlan({
       type: "week",
       title: "Week Template",
+      visibility: "private",
+      sharedUserIds: [],
       workingDays: 1,
       weekDays: [{ dayIndex: 0, attachedDayPlanId: "day-1" }]
     }, { id: "u1", role: "user" });
@@ -88,6 +91,8 @@ describe("plan-service", () => {
     await createPlan({
       type: "week",
       title: "Inline Week",
+      visibility: "private",
+      sharedUserIds: [],
       workingDays: 2,
       weekDays: [
         {
@@ -117,6 +122,8 @@ describe("plan-service", () => {
     await expect(createPlan({
       type: "week",
       title: "Attach Week",
+      visibility: "private",
+      sharedUserIds: [],
       workingDays: 1,
       weekDays: [{ dayIndex: 0, attachedDayPlanId: "day-1" }]
     }, { id: "u1", role: "user" })).resolves.toBeTruthy();
@@ -132,6 +139,8 @@ describe("plan-service", () => {
     await expect(createPlan({
       type: "week",
       title: "Attach Week",
+      visibility: "private",
+      sharedUserIds: [],
       workingDays: 1,
       weekDays: [{ dayIndex: 0, attachedDayPlanId: "day-2" }]
     }, { id: "u1", role: "user" })).rejects.toThrow("Some attached day plans are invalid or inaccessible.");
@@ -143,6 +152,8 @@ describe("plan-service", () => {
     const result = await updatePlan("plan-1", {
       type: "week",
       title: "Week",
+      visibility: "private",
+      sharedUserIds: [],
       workingDays: 1,
       weekDays: [{ dayIndex: 0, attachedDayPlanId: "day-any" }]
     }, { id: "admin-1", role: "admin" });
@@ -159,6 +170,8 @@ describe("plan-service", () => {
     const result = await updatePlan("plan-1", {
       type: "week",
       title: "Week Mixed",
+      visibility: "private",
+      sharedUserIds: [],
       workingDays: 2,
       weekDays: [
         {
@@ -182,6 +195,8 @@ describe("plan-service", () => {
     await createPlan({
       type: "week",
       title: "Inline Week",
+      visibility: "private",
+      sharedUserIds: [],
       workingDays: 1,
       weekDays: [{ dayIndex: 0, inlineDayPlan: { items: [{ activityId: "a1", orderIndex: 0, plannedTime: null, notes: null }] } }]
     }, { id: "u1", role: "user" });

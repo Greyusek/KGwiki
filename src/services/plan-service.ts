@@ -206,3 +206,25 @@ export function canEditPlan(planAuthorId: string, user: SessionUser) {
 export function sortDayPlanItemsForTest<T extends { plannedTime: string | null; orderIndex: number }>(items: T[]) {
   return sortDayItems(items);
 }
+
+
+export async function addActivityToDayPlan(
+  dayPlanId: string,
+  input: { activityId: string; plannedTime?: string | null; notes?: string | null },
+  user: SessionUser
+) {
+  const existing = await prisma.plan.findFirst({ where: { id: dayPlanId, type: "day", isInlineOnly: false, ...editablePlanWhere(user) }, select: { id: true } });
+  if (!existing) return { ok: false as const, status: 404, error: "Day plan not found." };
+
+  const last = await prisma.planItem.findFirst({ where: { planId: dayPlanId }, orderBy: { orderIndex: "desc" }, select: { orderIndex: true } });
+  const planItem = await prisma.planItem.create({
+    data: {
+      planId: dayPlanId,
+      activityId: input.activityId,
+      orderIndex: (last?.orderIndex ?? -1) + 1,
+      plannedTime: input.plannedTime ?? null,
+      notes: input.notes ?? null
+    }
+  });
+  return { ok: true as const, planItem };
+}
