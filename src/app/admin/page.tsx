@@ -26,6 +26,28 @@ export default async function AdminPage() {
     <section className="space-y-6">
       <h1 className="text-2xl font-semibold">Admin</h1>
 
+      <section className="space-y-3 rounded-lg border p-4">
+        <h2 className="font-semibold">Admin sections</h2>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { href: "/admin/users", label: "Users" },
+            { href: "/admin/sports", label: "Sports" },
+            { href: "/admin/tournaments", label: "Tournaments" },
+            { href: "/admin/seasons", label: "Seasons" },
+            { href: "/admin/rules", label: "Rules" },
+            { href: "/admin/matches", label: "Matches" }
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="rounded-md border px-3 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50 hover:text-blue-700"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <section className="space-y-2 rounded-lg border p-4">
         <h2 className="font-semibold">Users</h2>
         {users.length ? (
