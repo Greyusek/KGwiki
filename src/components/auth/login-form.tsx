@@ -15,7 +15,7 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/my-page";
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/profile";
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
